@@ -1,10 +1,11 @@
 # UID of the owner account
-bili_uid = ''
+BILI_UID = ''
 
 # Cookie of the owner account
-ownerCookie = ''
-# Cookie of the assistant (only for sending danmakus). If you leave it empty then ownerCookie will be used for this
-assistCookie = ''
+OWNER_COOKIE = ''
+# Cookie of the assistant (only for sending danmakus)
+# If you don't need an additional account, just use the same value as OWNER_COOKIE
+ASSIST_COOKIE = ''
 
 # Category of the live stream
-categoryID = ''
+CATEGORY_ID = '33'
