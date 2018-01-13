@@ -99,3 +99,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# config and plugin
+config.py
+plugin.py
