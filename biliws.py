@@ -8,6 +8,23 @@ import struct
 from generic import *
 import logging
 
+def danmakuParse(message):
+    try:
+        response = json.loads(message)
+    except Exception as e:
+        printlog("ERROR", "Failed to parse websocket message.")
+        print e
+        return
+    if response['cmd'] == 'DANMU_MSG':
+        from main import danmakuIdentify
+        danmakuIdentify(response['info'][2][0], response['info'][2][1], response['info'][1])
+    if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
+        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+        from main import startLive, restartStream
+        startLive()
+        restartStream()
+    return
+
 def on_message(ws, data):
     if (not data) or len(data) == 0:
         ws.close()
@@ -17,19 +34,16 @@ def on_message(ws, data):
         return
     if len(data) == 20:
         return
-    try:
-        response = json.loads(data[16:])
-    except Exception:
-        printlog("ERROR", "Failed to parse websocket message.")
-        return
-    if(response['cmd'] == 'DANMU_MSG'):
-        from main import danmakuIdentify
-        danmakuIdentify(response['info'][2][0], response['info'][2][1], response['info'][1])
-    if(response['cmd'] == 'PREPARING'):
-        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
-        from main import startLive, restartStream
-        startLive()
-        restartStream()
+    count = 0
+    for i in range(0, len(data), 1):
+        if data[i] == '{':
+            if count == 0:
+                start = i
+            count = count + 1
+        elif data[i] == '}':
+            if count == 1:
+                danmakuParse(data[start:i+1])
+            count = count - 1
     return
 
 def on_error(ws, error):
