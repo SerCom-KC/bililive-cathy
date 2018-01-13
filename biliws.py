@@ -9,34 +9,28 @@ from generic import *
 import logging
 
 def on_message(ws, data):
-    ret = []
     if (not data) or len(data) == 0:
         ws.close()
-        return ret
+        return
     if len(data) == 16:
         printlog("INFO", "Successfully connected with danmaku websocket server.")
-        return ret
+        return
     if len(data) == 20:
-        return ret
-    start = 0
-    end = 4
-    while len(data[end:]) > 0:
-        end = start + struct.unpack("!I", data[start:end])[0]
-        try:
-            ret.append(json.loads(data[(start + 16):end]))
-        except Exception:
-            pass
-        start = end
-        end = start + 4
-        if(ret[0]['cmd'] == 'DANMU_MSG'):
-            from main import danmakuIdentify
-            danmakuIdentify(ret[0]['info'][2][0], ret[0]['info'][2][1], ret[0]['info'][1])
-        if(ret[0]['cmd'] == 'PREPARING'):
-            printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
-            from main import startLive, restartStream
-            startLive()
-            restartStream()
-    return ret
+        return
+    try:
+        response = json.loads(data[16:])
+    except Exception:
+        printlog("ERROR", "Failed to parse websocket message.")
+        return
+    if(response['cmd'] == 'DANMU_MSG'):
+        from main import danmakuIdentify
+        danmakuIdentify(response['info'][2][0], response['info'][2][1], response['info'][1])
+    if(response['cmd'] == 'PREPARING'):
+        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+        from main import startLive, restartStream
+        startLive()
+        restartStream()
+    return
 
 def on_error(ws, error):
     printlog("ERROR", "A websocket error occurred.")
@@ -56,8 +50,7 @@ def listenDanmaku():
 def on_open(ws):
     def run(*args):
         global bili_roomid
-        #data = '\x00\x00\x5a\x00\x10\x00\x01\x00\x00\x00\x00\x07\x00\x00\x00\x01{"uid":0,"roomid":'+ str(bili_roomid) +',"protover":1,"platform":"web","clientver":"1.2.5"}'
-        data = '\x00\x00\x00\x35\x00\x10\x00\x01\x00\x00\x00\x07\x00\x00\x00\x01{"uid":0,"roomid":'+ str(bili_roomid) +',"protover":1}'
+        data = '\x00\x00\x00\x5a\x00\x10\x00\x01\x00\x00\x00\x07\x00\x00\x00\x01{"uid":0,"roomid":'+ str(bili_roomid) +',"protover":1,"platform":"web","clientver":"1.2.5"}'
         ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
 
     def heart():
