@@ -59,7 +59,11 @@ def listenDanmaku():
     logging.basicConfig()
     ws = websocket.WebSocketApp("ws://broadcastlv.chat.bilibili.com:2244/sub", on_message=on_message, on_error=on_error, on_close=on_close)
     ws.on_open = on_open
-    ws.run_forever()
+    while True:
+        try:
+            ws.run_forever()
+        except:
+            pass
 
 def on_open(ws):
     def run(*args):
