@@ -80,6 +80,7 @@ def isLiving():
     if live_statusdata == "":
         return False
     else:
+        printlog("INFO", "Live stream switch is ON.")
         return True
 
 def restartStream():
@@ -139,10 +140,6 @@ if __name__ == '__main__':
     start_time = int(time.time())
     from biliws import listenDanmaku
     Pool(processes=1).apply_async(listenDanmaku)
-    if not isLiving():
-        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
-        startLive()
-        restartStream()
     try:
         while True:
             try:

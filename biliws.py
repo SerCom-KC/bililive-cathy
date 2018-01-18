@@ -31,6 +31,11 @@ def on_message(ws, data):
         return
     if len(data) == 16:
         printlog("INFO", "Successfully connected with danmaku websocket server.")
+        from main import isLiving, startLive, restartStream
+        if not isLiving():
+            printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+            startLive()
+            restartStream()
         return
     if len(data) == 20:
         return
