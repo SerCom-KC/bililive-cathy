@@ -26,14 +26,19 @@ def getShow(id):
         return "We Bare Bears"
     elif id == 'okko':
         return "OK K.O.! Let's Be Heroes!"
+    elif id == 'fs':
+        return "Final Space"
     else:
         return "ERROR"
 
 def nowOnAir():
+    if isTBS():
+        sendDanmaku(u'因为版权原因，现在什么都不会播的喵~')
+        return
     from main import sendDanmaku
     global now_last_query
     global next_last_query
-    if now_last_query == '' or int(time.time()) > convertTime(now_last_query['endTime']):
+    if isTBS() or now_last_query == '' or int(time.time()) > convertTime(now_last_query['endTime']):
         sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
         url = "https://tvlistings.zap2it.com/api/grid"
         params = {
@@ -72,13 +77,13 @@ def nextOnAir(text):
     global now_last_query
     global next_last_query
     time_now = int(time.time())
+    show_name = getShow(text.replace('#next ', ''))
     if text.replace(' ','') == '#next':
         maxts = time_now + 3*60*60 # 3 hours from now
         timespan = '3'
     else:
         maxts = time_now + 12*60*60 # 12 hours from now
         timespan = '12'
-        show_name = getShow(text.replace('#next ', ''))
         if show_name == 'ERROR':
             sendDanmaku(u'你输入的命令好像有误的喵~')
             return
@@ -110,8 +115,10 @@ def nextOnAir(text):
                                 sendDanmaku(item['program']['episodeTitle'])
                             return
                 elif timespan == '3' and item['callSign'] == 'TBS' and isTBS(convertTime(item['events'][1]['startTime'])):
-                    list = item['events']
-                    break
+                    sendDanmaku(u'因为版权原因，短时间内什么都不会播的喵~')
+                    return
+                    #list = item['events']
+                    #break
             if not list:
                 sendDanmaku(u'Cathy也不知道的喵~')
                 return
@@ -141,7 +148,7 @@ def newOnAir(text):
     url = "https://catting.net/nep.json"
     list = requests.get(url).json()
     for item in list:
-        if item[8] == "Cartoon Network" or item[8] == "Adult Swim":
+        if item[8] == "Cartoon Network" or item[8] == "Adult Swim" or item[8] == "TBS" or item[8] == "TNT":
             if text.replace(' ','') != '#new' and item[9] == show_name:
                 sendDanmaku(u'下一次首播时间（北京时间）：')
                 time.sleep(1)
@@ -171,8 +178,10 @@ def newOnAir(text):
     else:
         sendDanmaku(u'Cathy也不知道的喵~')
 
-def isTBS(query=time.time()):
+def isTBS(query='undefined'):
     import datetime
+    if query == 'undefined':
+        query = time.time()
     return datetime.datetime.today().weekday() == 6 and int(query) > convertTime(time.strftime("%Y-%m-%dT", time.localtime()) + '01:00:00Z') and int(query) < convertTime(time.strftime("%Y-%m-%dT", time.localtime()) + '11:00:00Z')
 
 def roomTitle(title):
