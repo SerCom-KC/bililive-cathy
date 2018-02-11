@@ -19,7 +19,7 @@ import plugin
 danmaku_lock = False
 
 def danmakuIdentify(uid, username, text):
-    if str(uid) == '277336328':
+    if str(uid) == '277336328': # don't process self
         return
     printlog("INFO", "New danmaku from " + username + ": " + text)
     if str(uid) == BILI_UID:
@@ -27,10 +27,12 @@ def danmakuIdentify(uid, username, text):
             sendDanmaku(u'Cathy在的喵~')
     if text == '#now':
         plugin.nowOnAir()
+        #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
     elif text.find('#new') == 0:
         plugin.newOnAir(text)
     elif text.find('#next') == 0:
         plugin.nextOnAir(text)
+        #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
     elif text.find(u'字幕') != -1:
         sendDanmaku(u'本直播间为无字幕生肉放送，看下简介啊喵！')
 
@@ -85,8 +87,7 @@ def isLiving():
 
 def restartStream():
     printlog("INFO", "Attempting to restart live stream...")
-    printlog("INFO", "Killing ffmpeg...")
-    os.system('killall ffmpeg')
+    plugin.initStream(plugin.getChannel(), False)
     printlog("INFO", "The live stream should be back online now.")
 
 def startLive():
@@ -134,7 +135,7 @@ if __name__ == '__main__':
     checkConfig()
     global start_time
     if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
-        plugin.initStream(sys.argv)
+        plugin.initStream(sys.argv[2])
         quit()
     printlog('INFO', 'Cathy is on!')
     start_time = int(time.time())

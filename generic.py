@@ -2,7 +2,7 @@
 
 import requests
 from config import *
-import datetime
+import time
 
 def printlog(type, message):
     print "[" + type + "] " + message
@@ -14,7 +14,12 @@ def getRoomID():
     }
     return requests.get(url, params=params).json()["data"]
 
-def convertTime(string):
-    return int((datetime.datetime.strptime(string, '%Y-%m-%dT%H:%M:%SZ') - datetime.datetime(1970, 1, 1)).total_seconds())
+def convertTime(dt):
+    if dt.tzinfo is None:
+        return int(time.mktime(dt.timetuple()))
+    else:
+        from datetime import datetime
+        import pytz
+        return int((dt - datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
 
 bili_roomid = getRoomID()

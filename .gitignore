@@ -103,3 +103,4 @@ ENV/
 # config and plugin
 config.py
 plugin.py
+now_channel
