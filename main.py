@@ -152,6 +152,7 @@ def checkToken(user):
         bili_cookie[user] = bilireq(url, params=params).cookies
     else:
         printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
+        quit()
 
 if __name__ == '__main__':
     checkConfig()
