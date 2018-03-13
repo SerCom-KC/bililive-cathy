@@ -30,7 +30,7 @@ def getShow(id):
         return "We Bare Bears"
     elif id == 'okko' or id == "440832":
         return "OK K.O.! Let's Be Heroes"
-    elif id == 'fs':
+    elif id == 'fs' or id == "444812":
         return "Final Space"
     elif id == 'aao' or id == "444772":
         return "Apple & Onion"
@@ -57,8 +57,8 @@ def getShowID(id):
         return "419032"
     elif id == 'okko':
         return "440832"
-    #elif id == 'fs':
-        #return "Final Space"
+    elif id == 'fs':
+        return "444812"
     elif id == 'aao':
         return "444772"
     elif id.isdigit():
@@ -67,10 +67,7 @@ def getShowID(id):
         return "ERROR"
 
 def getChannel():
-    status_file = open('now_channel', 'r')
-    channel = status_file.readline()
-    status_file.close()
-    return channel.strip('\n').strip('\r')
+    return getConfig('extras', 'now_channel')
 
 def fixTime(_time):
     _time = time.localtime(int(_time))
@@ -112,7 +109,7 @@ def getUSEastTime(format='', yesterday=False, tomorrow=False):
     if format == '%Y' or format == '%m/%d/%Y':
         return time_return.strftime(format)
     return time_return
-    
+
 def getNextShowing(showId):
     url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
     params = {
@@ -208,7 +205,7 @@ def getSchedule(channel='undefined'):
                 for index_aswim, show_aswim in enumerate(allshows_aswim):
                     if checkSchedule(allshows_aswim, index_aswim):
                         return True
-                prev_show = show_aswim          
+                prev_show = show_aswim
                 # parse the first entry of CN schedule
                 checkflag = checkSchedule(allshows, index, prev_show)
                 if checkflag:
@@ -349,21 +346,19 @@ def newOnAir(text):
 def isTBS(query='undefined'):
     if query == 'undefined':
         query = time.time()
-    return datetime.today().weekday() == 6 and int(query) > convertTime(datetime.now().replace(hour=9,minute=0,second=0,microsecond=0)) and int(query) < convertTime(datetime.now().replace(hour=19,minute=0,second=0,microsecond=0))
+    return datetime.today().weekday() == 6 and int(query) > convertTime(datetime.now().replace(hour=8,minute=0,second=0,microsecond=0)) and int(query) < convertTime(datetime.now().replace(hour=18,minute=0,second=0,microsecond=0))
 
 def roomTitle(title):
-    bili_cookie = OWNER_COOKIE
     url = 'https://api.live.bilibili.com/room/v1/Room/update'
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': bili_cookie,
         'User-Agent': ''
     }
     data = {
         'room_id': bili_roomid,
         'title': title,
     }
-    response = requests.post(url, headers=headers, data=data).json()
+    response = requests.post(url, headers=headers, data=data, cookies=bili_cookie['host']).json()
     if response["code"] == 0:
         printlog("INFO", "Successfully changed room title to " + title)
     else:

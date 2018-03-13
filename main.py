@@ -19,10 +19,10 @@ import plugin
 danmaku_lock = False
 
 def danmakuIdentify(uid, username, text):
-    if str(uid) == '277336328': # don't process self
+    if str(uid) == getConfig('assist', 'uid'): # don't process self
         return
-    printlog("INFO", "New danmaku from " + username + ": " + text)
-    if str(uid) == BILI_UID:
+    printlog("INFO", "New danmaku from " + username + " (" + str(uid) + "): " + text)
+    if str(uid) == getConfig('host', 'uid'):
         if text == '#status':
             sendDanmaku(u'Cathy在的喵~')
     if text == '#now':
@@ -38,7 +38,6 @@ def danmakuIdentify(uid, username, text):
 
 def sendDanmaku(text):
     global danmaku_lock
-    bili_cookie = ASSIST_COOKIE
     while danmaku_lock:
         time.sleep(1)
     if isinstance(text, str):
@@ -55,7 +54,6 @@ def sendDanmaku(text):
         url = "http://api.live.bilibili.com/msg/send"
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Cookie': bili_cookie
         }
         data = {
             'roomid': bili_roomid,
@@ -64,7 +62,7 @@ def sendDanmaku(text):
             'mode': '1',
             'msg': msg,
         }
-        response = requests.post(url, headers=headers, data=data).json()
+        response = bilireq(url, headers=headers, data=data, cookies=bili_cookie['assist']).json()
         if response["code"] == 0:
             printlog("INFO", "Successfully sent danmaku: " + text)
         else:
@@ -77,7 +75,7 @@ def sendDanmaku(text):
 
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
-    url = 'https://live.bilibili.com/bili/isliving/' + BILI_UID
+    url = 'https://live.bilibili.com/bili/isliving/' + getConfig('host', 'uid')
     live_statusdata = json.loads(requests.get(url).content.replace('(', '').replace(');', ''))["data"]
     if live_statusdata == "":
         return False
@@ -91,19 +89,17 @@ def restartStream():
     printlog("INFO", "The live stream should be back online now.")
 
 def startLive():
-    bili_cookie = OWNER_COOKIE
     printlog("INFO", "Attempting to turn the switch on...")
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': bili_cookie
+        'Content-Type': 'application/x-www-form-urlencoded'
     }
     data = {
         'room_id': bili_roomid,
         'platform': 'pc',
-        'area_v2': CATEGORY_ID # live stream category
+        'area_v2': getConfig('host', 'category') # live stream category
     }
-    response = requests.post(url, headers=headers, data=data).json()
+    response = bilireq(url, headers=headers, data=data, cookies=bili_cookie['host']).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to turn the switch. Has the cookie expired? Anyway, I'm quitting.")
         quit()
@@ -118,18 +114,44 @@ def startLive():
         return 0
 
 def checkConfig():
-    if BILI_UID == '':
-        printlog("ERROR", "You must set up BILI_UID in config.py.")
+    if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
+        printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
-    elif OWNER_COOKIE == '':
-        printlog("ERROR", "You must set up OWNER_COOKIE in config.py.")
+    checkToken('host')
+    checkToken('assist')
+
+def checkToken(user):
+    callback_url = 'https://127.0.0.1/callback'
+    auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
+    if getConfig(user, 'accesskey') == '':
+        printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
         quit()
-    elif CATEGORY_ID == '':
-        printlog("ERROR", "You must set up CATEGORY_ID in config.py.")
-        quit()
-    elif ASSIST_COOKIE == '':
-        printlog("WARNING", "You must set up ASSIST_COOKIE in config.py.")
-        quit()
+    if getConfig(user, 'expires') != '' and int(time.time()) > int(getConfig(user, 'expires')):
+        url = 'https://passport.bilibili.com/api/login/renewToken'
+        params = {
+            'access_key': getConfig(user, 'accesskey')
+        }
+        resp = bilireq(url, params=params).json()
+        if resp['code'] == 0:
+            setConfig(user, 'expires', resp['expires'])
+        else:
+            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
+            quit()
+    url = 'https://passport.bilibili.com/api/oauth'
+    params = {
+        'access_key': getConfig(user, 'accesskey')
+    }
+    resp = bilireq(url, params=params).json()
+    if resp['code'] == 0:
+        setConfig(user, 'expires', resp['access_info']['expires'])
+        setConfig(user, 'uid', resp['access_info']['mid'])
+        url = 'https://passport.bilibili.com/api/login/sso'
+        params = {
+            'access_key': getConfig(user, 'accesskey')
+        }
+        bili_cookie[user] = bilireq(url, params=params).cookies
+    else:
+        printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
 
 if __name__ == '__main__':
     checkConfig()

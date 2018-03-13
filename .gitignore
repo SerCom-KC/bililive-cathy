@@ -101,6 +101,5 @@ ENV/
 .mypy_cache/
 
 # config and plugin
-config.py
+config.ini
 plugin.py
-now_channel
