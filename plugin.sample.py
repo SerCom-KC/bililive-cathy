@@ -349,20 +349,20 @@ def isTBS(query='undefined'):
     return datetime.today().weekday() == 6 and int(query) > convertTime(datetime.now().replace(hour=8,minute=0,second=0,microsecond=0)) and int(query) < convertTime(datetime.now().replace(hour=18,minute=0,second=0,microsecond=0))
 
 def roomTitle(title):
-    url = 'https://api.live.bilibili.com/room/v1/Room/update'
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': ''
+    global bili_cookie
+    url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
+    params = {
+        'access_key': getConfig('host', 'accesskey')
     }
     data = {
-        'room_id': bili_roomid,
-        'title': title,
+        'roomId': bili_roomid,
+        'title': title
     }
-    response = requests.post(url, headers=headers, data=data, cookies=bili_cookie['host']).json()
+    response = bilireq(url, params=params, data=data).json()
     if response["code"] == 0:
         printlog("INFO", "Successfully changed room title to " + title)
     else:
-        printlog("ERROR", "Failed to change room title to " + title)
+        printlog("ERROR", "Failed to change room title to " + title + ". API says " + response["message"])
 
 def initStream(argv):
     printlog("INFO", "I'm going to do nothing. Write some code in plugin.py please.")

@@ -52,8 +52,8 @@ def sendDanmaku(text):
     danmaku_lock = True
     try:
         url = "http://api.live.bilibili.com/msg/send"
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded',
+        params = {
+            'access_key': getConfig('assist', 'accesskey')
         }
         data = {
             'roomid': bili_roomid,
@@ -62,11 +62,11 @@ def sendDanmaku(text):
             'mode': '1',
             'msg': msg,
         }
-        response = bilireq(url, headers=headers, data=data, cookies=bili_cookie['assist']).json()
+        response = bilireq(url, params=params, data=data).json()
         if response["code"] == 0:
             printlog("INFO", "Successfully sent danmaku: " + text)
         else:
-            printlog("ERROR", "Failed to send danmaku: " + text)
+            printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
     except Exception as e:
         printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
         print(e)
@@ -91,18 +91,16 @@ def restartStream():
 def startLive():
     printlog("INFO", "Attempting to turn the switch on...")
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
-    headers = {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
     data = {
+        'access_key': getConfig('host', 'accesskey'),
         'room_id': bili_roomid,
-        'platform': 'pc',
-        'area_v2': getConfig('host', 'category') # live stream category
+        'platform': 'pc_link',
+        'area_v2': getConfig('host', 'category')
     }
-    response = bilireq(url, headers=headers, data=data, cookies=bili_cookie['host']).json()
+    response = bilireq(url, data=data).json()
     if response["code"] != 0:
-        printlog("ERROR", "Failed to turn the switch. Has the cookie expired? Anyway, I'm quitting.")
-        quit()
+        printlog("ERROR", "Failed to turn on the switch. API says " + response["message"])
+        #quit() # not working for some reason
     elif response["data"]["change"] == 0:
         printlog("ERROR", "Looks like the switch is on already.")
         return -1
@@ -120,41 +118,9 @@ def checkConfig():
     checkToken('host')
     checkToken('assist')
 
-def checkToken(user):
-    callback_url = 'https://127.0.0.1/callback'
-    auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
-    if getConfig(user, 'accesskey') == '':
-        printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
-        quit()
-    if getConfig(user, 'expires') != '' and int(time.time()) > int(getConfig(user, 'expires')):
-        url = 'https://passport.bilibili.com/api/login/renewToken'
-        params = {
-            'access_key': getConfig(user, 'accesskey')
-        }
-        resp = bilireq(url, params=params).json()
-        if resp['code'] == 0:
-            setConfig(user, 'expires', resp['expires'])
-        else:
-            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
-            quit()
-    url = 'https://passport.bilibili.com/api/oauth'
-    params = {
-        'access_key': getConfig(user, 'accesskey')
-    }
-    resp = bilireq(url, params=params).json()
-    if resp['code'] == 0:
-        setConfig(user, 'expires', resp['access_info']['expires'])
-        setConfig(user, 'uid', resp['access_info']['mid'])
-        url = 'https://passport.bilibili.com/api/login/sso'
-        params = {
-            'access_key': getConfig(user, 'accesskey')
-        }
-        bili_cookie[user] = bilireq(url, params=params).cookies
-    else:
-        printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
-        quit()
-
 if __name__ == '__main__':
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
     checkConfig()
     global start_time
     if len(sys.argv) != 1 and sys.argv[1] == 'initStream':

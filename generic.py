@@ -39,16 +39,58 @@ def setConfig(section, entry, value):
     with open(__file__.replace('generic.pyc', '').replace('generic.py', '') + 'config.ini', 'wb') as configFile:
         config.write(configFile)
 
+def checkToken(user):
+    callback_url = 'https://127.0.0.1/callback'
+    auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
+    if getConfig(user, 'accesskey') == '':
+        printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
+        quit()
+    if getConfig(user, 'expires') != '' and int(time.time()) > int(getConfig(user, 'expires')):
+        url = 'https://passport.bilibili.com/api/login/renewToken'
+        params = {
+            'access_key': getConfig(user, 'accesskey')
+        }
+        resp = bilireq(url, params=params).json()
+        if resp['code'] == 0:
+            setConfig(user, 'expires', resp['expires'])
+        else:
+            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
+            quit()
+    url = 'https://passport.bilibili.com/api/oauth'
+    params = {
+        'access_key': getConfig(user, 'accesskey')
+    }
+    resp = bilireq(url, params=params).json()
+    if resp['code'] == 0:
+        setConfig(user, 'expires', resp['access_info']['expires'])
+        setConfig(user, 'uid', resp['access_info']['mid'])
+        url = 'https://passport.bilibili.com/api/login/sso'
+        params = {
+            'access_key': getConfig(user, 'accesskey')
+        }
+        bili_cookie[user] = bilireq(url, params=params).cookies
+    else:
+        printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
+        quit()
+
 def bilireq(url, params={}, headers={}, cookies={}, data={}):
     from collections import OrderedDict
-    params['appkey'] = getConfig('oauth', 'appkey')
-    params['ts'] = str(int(time.time()))
-    params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
-    prestr = '&'.join('%s=%s' % key for key in params.iteritems())
-    params['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
+    if 'access_key' in data: # Some APIs require access_key in POST data instead of params
+        data['appkey'] = getConfig('oauth', 'appkey')
+        data['ts'] = str(int(time.time()))
+        data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
+        prestr = '&'.join('%s=%s' % key for key in data.iteritems())
+        data['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
+    else:
+        params['appkey'] = getConfig('oauth', 'appkey')
+        params['ts'] = str(int(time.time()))
+        params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
+        prestr = '&'.join('%s=%s' % key for key in params.iteritems())
+        params['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
     if data == {}:
         return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False)
     else:
+        headers['Content-Type'] = 'application/x-www-form-urlencoded'
         return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False)
 
 bili_roomid = getRoomID()
