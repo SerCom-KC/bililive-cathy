@@ -349,7 +349,6 @@ def isTBS(query='undefined'):
     return datetime.today().weekday() == 6 and int(query) > convertTime(datetime.now().replace(hour=8,minute=0,second=0,microsecond=0)) and int(query) < convertTime(datetime.now().replace(hour=18,minute=0,second=0,microsecond=0))
 
 def roomTitle(title):
-    global bili_cookie
     url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
     params = {
         'access_key': getConfig('host', 'accesskey')
