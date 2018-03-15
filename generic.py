@@ -42,6 +42,14 @@ def setConfig(section, entry, value):
 def checkToken(user):
     callback_url = 'https://127.0.0.1/callback'
     auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
+    check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
+    resp = requests.get(check_auth_url).json()
+    if resp['code'] == -1:
+        printlog("ERROR", "Your appkey is invalid. Find another one!")
+        quit()
+    elif resp['code'] == -3:
+        printlog("ERROR", "Your appsecret does not match the appkey you're using. Maybe typo?")
+        quit()
     if getConfig(user, 'accesskey') == '':
         printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
         quit()
