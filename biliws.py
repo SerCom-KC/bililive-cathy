@@ -17,7 +17,7 @@ def danmakuParse(message):
         return
     if response['cmd'] == 'DANMU_MSG':
         from main import danmakuIdentify
-        danmakuIdentify(response['info'][2][0], response['info'][2][1], response['info'][1])
+        danmakuIdentify(response['info'][2][0], response['info'][2][1], response['info'][1], response['info'][0][4])
     if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
         printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
         from main import startLive, restartStream

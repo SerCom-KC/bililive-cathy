@@ -18,10 +18,10 @@ import plugin
 
 danmaku_lock = False
 
-def danmakuIdentify(uid, username, text):
+def danmakuIdentify(uid, username, text, time):
     if str(uid) == getConfig('assist', 'uid'): # don't process self
         return
-    printlog("INFO", "New danmaku from " + username + " (" + str(uid) + "): " + text)
+    printlog("INFO", "New danmaku from " + username + " (" + str(uid) + ") at " + str(time) + ": " + text)
     if str(uid) == getConfig('host', 'uid'):
         if text == '#status':
             sendDanmaku(u'Cathy在的喵~')
