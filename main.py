@@ -60,7 +60,7 @@ def sendDanmaku(text):
             'color': '16777215',
             'fontsize': '25',
             'mode': '1',
-            'msg': msg,
+            'msg': msg
         }
         response = bilireq(url, params=params, data=data).json()
         if response["code"] == 0:

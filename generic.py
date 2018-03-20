@@ -83,6 +83,7 @@ def checkToken(user):
 
 def bilireq(url, params={}, headers={}, cookies={}, data={}):
     from collections import OrderedDict
+    headers['User-Agent'] = ''
     if 'access_key' in data: # Some APIs require access_key in POST data instead of params
         data['appkey'] = getConfig('oauth', 'appkey')
         data['ts'] = str(int(time.time()))
