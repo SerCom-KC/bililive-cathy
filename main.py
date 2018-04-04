@@ -29,7 +29,8 @@ def danmakuIdentify(uid, username, text, time):
         plugin.nowOnAir()
         #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
     elif text.find('#new') == 0:
-        plugin.newOnAir(text)
+        #plugin.newOnAir(text)
+        sendDanmaku(u'这个功能被禁用了，非常抱歉呜喵QAQ')
     elif text.find('#next') == 0:
         plugin.nextOnAir(text)
         #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
