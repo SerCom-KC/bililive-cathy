@@ -34,6 +34,8 @@ def getShow(id):
         return "Final Space"
     elif id == 'aao' or id == "444772":
         return "Apple & Onion"
+    elif id == 'su' or id == '399692':
+        return "Steven Universe"
     else:
         return "ERROR"
 
@@ -61,6 +63,8 @@ def getShowID(id):
         return "444812"
     elif id == 'aao':
         return "444772"
+    elif id == 'su':
+        return "399692"
     elif id.isdigit():
         return id
     else:
@@ -184,9 +188,12 @@ def checkSchedule(allshows, index, prev_show=''):
         return True
     return False
 
-def getSchedule(channel='undefined'):
+def getSchedule(channel='undefined', silent=False):
     from main import sendDanmaku
-    sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
+    if not (now_last_query['title'] == '' or next_last_query['title'] == '' or int(time.time()) > next_last_query['airtime']): # needs update
+        return False
+    if not silent:
+        sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url).content)
@@ -236,15 +243,14 @@ def getSchedule(channel='undefined'):
 def nowOnAir():
     from main import sendDanmaku
     if getChannel() == 'offair':
-        sendDanmaku(u'因为版权原因，现在什么都不会播的喵~')
+        sendDanmaku(u'现在什么都不会播的喵~')
         return
     global now_last_query
     global next_last_query
-    if now_last_query['title'] == '' or int(time.time()) > next_last_query['airtime']:
-        if not getSchedule():
-            sendDanmaku(u'Cathy也不知道的喵~')
-            return
-    if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network":
+    if not getSchedule():
+        sendDanmaku(u'Cathy也不知道的喵~')
+        return
+    if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
         sendDanmaku(u'Cathy也不知道的喵~')
         return
     sendDanmaku(u'正在播出的是：')
@@ -261,12 +267,14 @@ def nowOnAir():
 
 def nextOnAir(text):
     from main import sendDanmaku
+    if getChannel() == 'offair':
+        sendDanmaku(u'晚点再来喵~')
+        return
     global next_last_query
     if text.replace(' ','') == '#next': # literally what's coming up next
-        if next_last_query['title'] == '' or int(time.time()) > next_last_query['airtime']:
-            if not getSchedule():
-                sendDanmaku(u'Cathy也不知道的喵~')
-                return
+        if not getSchedule():
+            sendDanmaku(u'Cathy也不知道的喵~')
+            return
         if isTBS(next_last_query['airtime']):
             sendDanmaku(u'因为版权原因，短时间内什么都不会播的喵~')
             return
