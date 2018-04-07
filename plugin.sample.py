@@ -7,9 +7,6 @@ from datetime import datetime, timedelta
 import pytz
 import re
 
-now_last_query = {'title': '', 'episodeName': '', 'airtime': 0}
-next_last_query = {'title': '', 'episodeName': '', 'airtime': 0}
-
 def getShow(id):
     id = id.lower()
     if id == 'tawog' or id == "376453":
@@ -144,14 +141,12 @@ def getNextShowing(showId):
     return False #errors
 
 def checkSchedule(allshows, index, prev_show=''):
-    global now_last_query
-    global next_last_query
     date_str = allshows[index].xpath('@date')[0] + ' ' + allshows[index].xpath('@military')[0]
     show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
     if int(time.time()) < convertTime(show_time):
         # update next_last_query
         if allshows[index].xpath('@title')[0] == "Cartoon Network": # fetch episodeName manually
-            next_last_query['title'] = getShow(allshows[index].xpath('@showId')[0])
+            setConfig('extras', 'next_title', getShow(allshows[index].xpath('@showId')[0]))
             url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
             params = {
                 'methodName': 'getEpisodeDesc',
@@ -159,11 +154,11 @@ def checkSchedule(allshows, index, prev_show=''):
                 'episodeId': allshows[index].xpath('@episodeId')[0],
                 'isFeatured': allshows[index].xpath('@isFeatured')[0]
             }
-            next_last_query['episodeName'] = fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0])
+            setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0]))
         else:
-            next_last_query['title'] = fixShowName(allshows[index].xpath('@title')[0])
-            next_last_query['episodeName'] = fixEpisodeName(allshows[index].xpath('@episodeName')[0])
-        next_last_query['airtime'] = convertTime(show_time)
+            setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@title')[0]))
+            setConfig('extras', 'next_episodeName', fixEpisodeName(allshows[index].xpath('@episodeName')[0]))
+        setConfig('extras', 'next_airtime', convertTime(show_time))
         # update now_last_query
         if prev_show != '':
             show = prev_show
@@ -172,7 +167,7 @@ def checkSchedule(allshows, index, prev_show=''):
         date_str = show.xpath('@date')[0] + ' ' + show.xpath('@military')[0]
         show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
         if show.xpath('@title')[0] == "Cartoon Network": # fetch episodeName manually
-            now_last_query['title'] = getShow(show.xpath('@showId')[0])
+            setConfig('extras', 'now_title', getShow(show.xpath('@showId')[0]))
             url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
             params = {
                 'methodName': 'getEpisodeDesc',
@@ -180,18 +175,21 @@ def checkSchedule(allshows, index, prev_show=''):
                 'episodeId': show.xpath('@episodeId')[0],
                 'isFeatured': show.xpath('@isFeatured')[0]
             }
-            now_last_query['episodeName'] = fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0])
+            setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0]))
         else:
-            now_last_query['title'] = fixShowName(show.xpath('@title')[0])
-            now_last_query['episodeName'] = fixEpisodeName(show.xpath('@episodeName')[0])
-        now_last_query['airtime'] = convertTime(show_time)
+            setConfig('extras', 'now_title', fixShowName(show.xpath('@title')[0]))
+            setConfig('extras', 'now_episodeName', fixEpisodeName(show.xpath('@episodeName')[0]))
+        setConfig('extras', 'now_airtime', convertTime(show_time))
+        printlog("INFO", "Now on air: " + getConfig('extras', 'now_title') + ' - ' + getConfig('extras', 'now_episodeName'))
         return True
     return False
 
 def getSchedule(channel='undefined', silent=False):
     from main import sendDanmaku
-    if not (now_last_query['title'] == '' or next_last_query['title'] == '' or int(time.time()) > next_last_query['airtime']): # needs update
-        return False
+    now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
+    next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
+    if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
+        return True
     if not silent:
         sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
@@ -245,8 +243,8 @@ def nowOnAir():
     if getChannel() == 'offair':
         sendDanmaku(u'现在什么都不会播的喵~')
         return
-    global now_last_query
-    global next_last_query
+    now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
+    next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if not getSchedule():
         sendDanmaku(u'Cathy也不知道的喵~')
         return
@@ -270,7 +268,7 @@ def nextOnAir(text):
     if getChannel() == 'offair':
         sendDanmaku(u'晚点再来喵~')
         return
-    global next_last_query
+    next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if text.replace(' ','') == '#next': # literally what's coming up next
         if not getSchedule():
             sendDanmaku(u'Cathy也不知道的喵~')
