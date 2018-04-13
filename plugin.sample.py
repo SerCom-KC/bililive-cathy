@@ -71,7 +71,8 @@ def getChannel():
     return getConfig('extras', 'now_channel')
 
 def fixTime(_time):
-    _time = time.localtime(int(_time))
+    cst_offset = int(pytz.timezone('Asia/Shanghai').utcoffset(datetime.now()).total_seconds())
+    _time = time.gmtime(int(_time)+cst_offset)
     return time.strftime('%m', _time).lstrip('0') + '月' + time.strftime('%d', _time).lstrip('0') + '日' + time.strftime('%H:%M', _time).lstrip('0')
 
 # Adapted from https://gitlab.com/ctoon/cn-schedule-fetcher
