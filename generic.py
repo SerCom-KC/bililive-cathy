@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
-
+import sys
 import time
 from hashlib import md5
 
@@ -26,7 +26,7 @@ def convertTime(dt):
 def getConfig(section, entry=None):
     from ConfigParser import ConfigParser
     config = ConfigParser()
-    config.read(__file__.replace('generic.pyc', '').replace('generic.py', '') + 'config.ini')
+    config.read(sys.path[0] + '/config.ini')
     if entry:
         return config.get(section, entry)
     return dict(config.items(section))
@@ -34,13 +34,13 @@ def getConfig(section, entry=None):
 def setConfig(section, entry, value):
     from ConfigParser import ConfigParser
     config = ConfigParser()
-    config.read(__file__.replace('generic.pyc', '').replace('generic.py', '') + 'config.ini')
+    config.read(sys.path[0] + '/config.ini')
     config.set(section, entry, value)
-    with open(__file__.replace('generic.pyc', '').replace('generic.py', '') + 'config.ini', 'wb') as configFile:
+    with open(sys.path[0] + '/config.ini', 'wb') as configFile:
         config.write(configFile)
 
 def checkToken(user):
-    callback_url = 'https://127.0.0.1/callback'
+    callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
     auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
     check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
     resp = requests.get(check_auth_url).json()
@@ -53,7 +53,7 @@ def checkToken(user):
     if getConfig(user, 'accesskey') == '':
         printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
         quit()
-    if getConfig(user, 'expires') != '' and int(time.time()) > int(getConfig(user, 'expires')):
+    if getConfig(user, 'expires') != '' and int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
         url = 'https://passport.bilibili.com/api/login/renewToken'
         params = {
             'access_key': getConfig(user, 'accesskey')

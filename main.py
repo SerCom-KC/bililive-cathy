@@ -135,6 +135,7 @@ if __name__ == '__main__':
         while True:
             try:
                 plugin.getSchedule(silent=True)
+                checkConfig()
                 time.sleep(1)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")
