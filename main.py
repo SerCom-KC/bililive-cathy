@@ -35,7 +35,7 @@ def danmakuIdentify(uid, username, text, time):
         plugin.nextOnAir(text)
         #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
     elif text.find(u'字幕') != -1:
-        sendDanmaku(u'本直播间为无字幕生肉放送，看下简介啊喵！')
+        sendDanmaku(u'需要英文字幕的话请前往备用直播间哦~')
 
 def sendDanmaku(text):
     global danmaku_lock
@@ -77,7 +77,7 @@ def sendDanmaku(text):
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
     url = 'https://live.bilibili.com/bili/isliving/' + getConfig('host', 'uid')
-    live_statusdata = json.loads(requests.get(url).content.replace('(', '').replace(');', ''))["data"]
+    live_statusdata = json.loads(requests.get(url, timeout=3).content.replace('(', '').replace(');', ''))["data"]
     if live_statusdata == "":
         return False
     else:
@@ -109,7 +109,7 @@ def startLive():
         printlog("INFO", "Live switch is now ON. The time now is " + time.ctime())
         #addr = response["data"]["rtmp"]["addr"]
         #code = response["data"]["rtmp"]["code"]
-        #new_link = requests.get(response["data"]["rtmp"]["new_link"]).json()["data"]["url"]
+        #new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
         return 0
 
 def checkConfig():

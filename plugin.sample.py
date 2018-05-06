@@ -119,7 +119,7 @@ def getNextShowing(showId):
         'showId': showId,
         'timezone': 'EST'
     }
-    allShowings = etree.XML(requests.get(url, params=params).content)
+    allShowings = etree.XML(requests.get(url, params=params, timeout=3).content)
     try:
         errtmp = allShowings[0]
     except IndexError:
@@ -155,7 +155,7 @@ def checkSchedule(allshows, index, prev_show=''):
                 'episodeId': allshows[index].xpath('@episodeId')[0],
                 'isFeatured': allshows[index].xpath('@isFeatured')[0]
             }
-            setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0]))
+            setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         else:
             setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@title')[0]))
             setConfig('extras', 'next_episodeName', fixEpisodeName(allshows[index].xpath('@episodeName')[0]))
@@ -176,7 +176,7 @@ def checkSchedule(allshows, index, prev_show=''):
                 'episodeId': show.xpath('@episodeId')[0],
                 'isFeatured': show.xpath('@isFeatured')[0]
             }
-            setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params).content).xpath("//Desc/episodeDesc/text()")[0]))
+            setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         else:
             setConfig('extras', 'now_title', fixShowName(show.xpath('@title')[0]))
             setConfig('extras', 'now_episodeName', fixEpisodeName(show.xpath('@episodeName')[0]))
@@ -195,7 +195,7 @@ def getSchedule(channel='undefined', silent=False):
         sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
-        allshows = etree.XML(requests.get(url).content)
+        allshows = etree.XML(requests.get(url, timeout=3).content)
         cn_start = False
         for index, show in enumerate(allshows):
             if show.xpath('@blockName')[0] == 'AdultSwim':
@@ -207,7 +207,7 @@ def getSchedule(channel='undefined', silent=False):
             if not cn_start: # parse yesterday's [adult swim] schedule, from 0:00
                 cn_start = True
                 url = 'https://www.adultswim.com/adultswimdynsched/asXml/' + getUSEastTime('%d', yesterday=True) + '.EST.xml'
-                allshows_aswim = etree.XML(requests.get(url).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
+                allshows_aswim = etree.XML(requests.get(url, timeout=3).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
                 for index_aswim, show_aswim in enumerate(allshows_aswim):
                     if checkSchedule(allshows_aswim, index_aswim):
                         return True
@@ -222,7 +222,7 @@ def getSchedule(channel='undefined', silent=False):
                 return True
         # parse today's [adult swim] schedule
         url = 'https://www.adultswim.com/adultswimdynsched/asXml/' + getUSEastTime('%d') + '.EST.xml'
-        allshows_aswim = etree.XML(requests.get(url).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
+        allshows_aswim = etree.XML(requests.get(url, timeout=3).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
         for index_aswim, show_aswim in enumerate(allshows_aswim):
             if index_aswim == 0:
                 checkflag = checkSchedule(allshows_aswim, index_aswim, prev_show)
@@ -232,7 +232,7 @@ def getSchedule(channel='undefined', silent=False):
                 return True
         prev_show = show_aswim
         # parse the first [as] entry of next day in today's schedule
-        allshows_aswim = etree.XML(requests.get(url).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y', tomorrow=True) + '"]')
+        allshows_aswim = etree.XML(requests.get(url, timeout=3).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y', tomorrow=True) + '"]')
         checkflag = checkSchedule(allshows_aswim, 0, prev_show)
         if checkflag:
             return True
@@ -318,7 +318,7 @@ def newOnAir(text):
             sendDanmaku(u'你输入的命令好像有误的喵~')
             return
     url = "https://catting.net/nep.json"
-    list = requests.get(url).json()
+    list = requests.get(url, timeout=3).json()
     for item in list:
         if item[8] == "Cartoon Network" or item[8] == "Adult Swim" or item[8] == "TBS" or item[8] == "TNT":
             if text.replace(' ','') != '#new' and fixShowName(item[9]) == show_name:

@@ -13,7 +13,7 @@ def getRoomID():
     params = {
         'mid': getConfig('host', 'uid')
     }
-    return requests.get(url, params=params).json()["data"]
+    return requests.get(url, params=params, timeout=3).json()["data"]
 
 def convertTime(dt):
     if dt.tzinfo is None:
@@ -43,7 +43,7 @@ def checkToken(user):
     callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
     auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
     check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
-    resp = requests.get(check_auth_url).json()
+    resp = requests.get(check_auth_url, timeout=3).json()
     if resp['code'] == -1:
         printlog("ERROR", "Your appkey is invalid. Find another one!")
         quit()
@@ -97,10 +97,10 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
         prestr = '&'.join('%s=%s' % key for key in params.iteritems())
         params['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
     if data == {}:
-        return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False)
+        return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False, timeout=3)
     else:
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False)
+        return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
 
 bili_roomid = getRoomID()
 bili_cookie = {}
