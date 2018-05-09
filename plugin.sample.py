@@ -258,7 +258,7 @@ def nowOnAir():
         sendDanmaku(now_last_query['episodeName'])
         return
     sendDanmaku(now_last_query['title'])
-    if now_last_query['episodeName'] != None:
+    if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
         time.sleep(1)
         sendDanmaku(u'这集的标题是：')
         time.sleep(1)
@@ -274,9 +274,6 @@ def nextOnAir(text):
         if not getSchedule():
             sendDanmaku(u'Cathy也不知道的喵~')
             return
-        if isTBS(next_last_query['airtime']):
-            sendDanmaku(u'因为版权原因，短时间内什么都不会播的喵~')
-            return
         if next_last_query['title'] == "[AdultSwim]" or next_last_query['title'] == "Cartoon Network":
             sendDanmaku(u'Cathy也不知道的喵~')
             return
@@ -286,7 +283,7 @@ def nextOnAir(text):
             sendDanmaku(next_last_query['episodeName'])
             return
         sendDanmaku(next_last_query['title'])
-        if next_last_query['episodeName'] != None:
+        if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
             time.sleep(1)
             sendDanmaku(u'这集的标题是：')
             time.sleep(1)
@@ -349,11 +346,6 @@ def newOnAir(text):
         sendDanmaku(u'两周内没有发现首播的喵~')
     else:
         sendDanmaku(u'Cathy也不知道的喵~')
-
-def isTBS(query='undefined'):
-    if query == 'undefined':
-        query = time.time()
-    return datetime.today().weekday() == 6 and int(query) > convertTime(datetime.now().replace(hour=8,minute=0,second=0,microsecond=0)) and int(query) < convertTime(datetime.now().replace(hour=18,minute=0,second=0,microsecond=0))
 
 def roomTitle(title):
     url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
