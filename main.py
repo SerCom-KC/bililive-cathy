@@ -123,23 +123,23 @@ def startLive():
         return 0
 
 def initBiliMsg():
-    global bilimsg-ack_seqno
-    global bilimsg-latest_seqno
+    global bilimsg_ack_seqno
+    global bilimsg_latest_seqno
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to initialize bilibili private message.")
         return False
     else:
-        bilimsg-ack_seqno = response["data"]["ack_seqno"]
-        bilimsg-latest_seqno = response["data"]["latest_seqno"]
+        bilimsg_ack_seqno = response["data"]["ack_seqno"]
+        bilimsg_latest_seqno = response["data"]["latest_seqno"]
         return True
 
 def checkBiliMsg():
-    global bilimsg-ack_seqno
-    global bilimsg-latest_seqno
+    global bilimsg_ack_seqno
+    global bilimsg_latest_seqno
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg-ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
+    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
     if resp["code"] != 0:
         printlog("ERROR", "Failed to receive bilibili private message.")
         return False
@@ -152,8 +152,8 @@ def checkBiliMsg():
             sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
             time.sleep(1)
             sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
-        bilimsg-ack_seqno += 1
-        bilimsg-latest_seqno = resp["data"]["max_seqno"]
+        bilimsg_ack_seqno += 1
+        bilimsg_latest_seqno = resp["data"]["max_seqno"]
     else:
         url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
         resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
