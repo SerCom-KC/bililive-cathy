@@ -127,7 +127,7 @@ def initBiliMsg():
     global bilimsg_ack_seqno
     global bilimsg_latest_seqno
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack" # Don't parse old ones
-    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if resp["code"] != 0:
         printlog("ERROR", "Failed to mark bilibili private message as read.")
         return False
