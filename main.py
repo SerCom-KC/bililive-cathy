@@ -13,30 +13,41 @@ import datetime
 import json
 import pytz
 from generic import *
-from multiprocessing import Pool
+from threading import Thread
 import plugin
 
 danmaku_lock = False
+bilimsg_lock = False
 
-def danmakuIdentify(uid, username, text, time):
-    if str(uid) == getConfig('assist', 'uid'):
-        printlog("INFO", "Danmaku sent: " + text)
-        return
-    printlog("INFO", "New danmaku from " + username + " (" + str(uid) + ") at " + str(time) + ": " + text)
-    if str(uid) == getConfig('host', 'uid'):
-        if text == '#status':
-            sendDanmaku(u'Cathy在的喵~')
-    if text == '#now':
-        plugin.nowOnAir()
-        #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
-    elif text.find('#new') == 0:
-        #plugin.newOnAir(text)
-        sendDanmaku(u'这个功能被禁用了，非常抱歉呜喵QAQ')
-    elif text.find('#next') == 0:
-        plugin.nextOnAir(text)
-        #sendDanmaku(u'呜，Cathy的时间表被KC没收了~')
-    elif text.find(u'字幕') != -1:
-        sendDanmaku(u'需要英文字幕的话请前往备用直播间哦~')
+def sendReply(source, text):
+    if source["from"] == "bili-danmaku":
+        sendDanmaku(text)
+    elif source["from"] == "bili-msg":
+        sendBiliMsg(source["uid"], text)
+    else:
+        printlog("ERROR", "Invalid sendReply source!")
+
+def sendBiliMsg(uid, text):
+    global bilimsg_lock
+    while bilimsg_lock:
+        time.sleep(1)
+    bilimsg_lock = True
+    url = "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg"
+    resp = requests.post(url,
+                         params = {"access_key": getConfig('assist', 'accesskey')},
+                         data = {
+                             "msg[sender_uid]": int(getConfig('assist', 'uid')),
+                             "msg[receiver_id]": uid,
+                             "msg[receiver_type]": 1,
+                             "msg[msg_type]": 1,
+                             "msg[content]": '{"content":"' + text + '"}',
+                             "msg[timestamp]": int(time.time())
+                         }, timeout=3).json()
+    danmaku_lock = False
+    if resp["code"] != 0:
+        printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
+        return False
+    return True
 
 def sendDanmaku(text):
     global danmaku_lock
@@ -100,7 +111,7 @@ def startLive():
     response = bilireq(url, data=data).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to turn on the switch. API says " + response["message"])
-        #quit() # not working for some reason
+        raise SystemExit
     elif response["data"]["change"] == 0:
         printlog("ERROR", "Looks like the switch is on already.")
         return -1
@@ -111,6 +122,45 @@ def startLive():
         #new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
         return 0
 
+def initBiliMsg():
+    global bilimsg-ack_seqno
+    global bilimsg-latest_seqno
+    url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
+    response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+    if response["code"] != 0:
+        printlog("ERROR", "Failed to initialize bilibili private message.")
+        return False
+    else:
+        bilimsg-ack_seqno = response["data"]["ack_seqno"]
+        bilimsg-latest_seqno = response["data"]["latest_seqno"]
+        return True
+
+def checkBiliMsg():
+    global bilimsg-ack_seqno
+    global bilimsg-latest_seqno
+    url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
+    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg-ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
+    if resp["code"] != 0:
+        printlog("ERROR", "Failed to receive bilibili private message.")
+        return False
+    if resp["data"]["has_more"]:
+        message = resp["data"]["messages"][0]
+        source = {"from": "bili-msg", "uid": message["sender_uid"]}
+        printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+        from plugin import commandParse
+        if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
+            sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
+            time.sleep(1)
+            sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
+        bilimsg-ack_seqno += 1
+        bilimsg-latest_seqno = resp["data"]["max_seqno"]
+    else:
+        url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
+        resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+        if resp["code"] != 0:
+            printlog("ERROR", "Failed to mark bilibili private message as read.")
+            return False
+
 def checkConfig():
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
         printlog("ERROR", "You must set up OAuth application info in config.ini")
@@ -120,7 +170,6 @@ def checkConfig():
     checkToken('assist')
 
 def onexit():
-    #Pool(processes=1).terminate()
     printlog("INFO", "Cathy is off.")
 
 if __name__ == '__main__':
@@ -135,12 +184,14 @@ if __name__ == '__main__':
     atexit.register(onexit)
     start_time = int(time.time())
     from biliws import listenDanmaku
-    Pool(processes=1).apply_async(listenDanmaku)
+    Thread(target=listenDanmaku).start()
+    initBiliMsg()
     try:
         while True:
             try:
                 plugin.getSchedule(silent=True)
                 checkConfig()
+                Thread(target=checkBiliMsg).start()
                 time.sleep(5)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")

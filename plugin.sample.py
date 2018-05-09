@@ -7,6 +7,25 @@ from datetime import datetime, timedelta
 import pytz
 import re
 
+def commandParse(source, text, time):
+    from main import sendReply
+    if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
+        if text == '#status':
+            sendReply(source, u'Cathy在的喵~')
+    if text == '#now':
+        nowOnAir(source)
+        #sendReply(source, u'呜，Cathy的时间表被KC没收了~')
+    elif text.find('#new') == 0:
+        #newOnAir(source, text)
+        sendReply(source, u'这个功能被禁用了，非常抱歉呜喵QAQ')
+    elif text.find('#next') == 0:
+        nextOnAir(source, text)
+        #sendReply(source, u'呜，Cathy的时间表被KC没收了~')
+    elif text.find(u'字幕') != -1:
+        sendReply(source, u'需要英文字幕的话请前往备用直播间哦~')
+    else:
+        return False
+
 def getShow(id):
     id = id.lower()
     if id == 'tawog' or id == "376453":
@@ -185,14 +204,14 @@ def checkSchedule(allshows, index, prev_show=''):
         return True
     return False
 
-def getSchedule(channel='undefined', silent=False):
-    from main import sendDanmaku
+def getSchedule(source, channel='undefined', silent=False):
+    from main import sendReply
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
         return True
     if not silent:
-        sendDanmaku(u'稍等一下哦，Cathy去查查放送表的喵~')
+        sendReply(source, u'稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url, timeout=3).content)
@@ -239,113 +258,113 @@ def getSchedule(channel='undefined', silent=False):
         printlog('ERROR', 'An error occurred when parsing the schedule. The time now is ' + time.ctime())
         return False # not found
 
-def nowOnAir():
-    from main import sendDanmaku
+def nowOnAir(source):
+    from main import sendReply
     if getChannel() == 'offair':
-        sendDanmaku(u'现在什么都不会播的喵~')
+        sendReply(source, u'现在什么都不会播的喵~')
         return
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
-    if not getSchedule():
-        sendDanmaku(u'Cathy也不知道的喵~')
+    if not getSchedule(source):
+        sendReply(source, (u'Cathy也不知道的喵~')
         return
     if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
-        sendDanmaku(u'Cathy也不知道的喵~')
+        sendReply(source, u'Cathy也不知道的喵~')
         return
-    sendDanmaku(u'正在播出的是：')
+    sendReply(source, u'正在播出的是：')
     time.sleep(1)
     if now_last_query['title'] == "MOVIE" or now_last_query['title'] == "SPECIAL":
-        sendDanmaku(now_last_query['episodeName'])
+        sendReply(source, now_last_query['episodeName'])
         return
-    sendDanmaku(now_last_query['title'])
+    sendReply(source, now_last_query['title'])
     if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
         time.sleep(1)
-        sendDanmaku(u'这集的标题是：')
+        sendReply(source, u'这集的标题是：')
         time.sleep(1)
-        sendDanmaku(now_last_query['episodeName'])
+        sendReply(source, now_last_query['episodeName'])
 
-def nextOnAir(text):
-    from main import sendDanmaku
+def nextOnAir(source, text):
+    from main import sendReply
     if getChannel() == 'offair':
-        sendDanmaku(u'晚点再来喵~')
+        sendReply(source, u'晚点再来喵~')
         return
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if text.replace(' ','') == '#next': # literally what's coming up next
-        if not getSchedule():
-            sendDanmaku(u'Cathy也不知道的喵~')
+        if not getSchedule(source):
+            sendReply(source, u'Cathy也不知道的喵~')
             return
         if next_last_query['title'] == "[AdultSwim]" or next_last_query['title'] == "Cartoon Network":
-            sendDanmaku(u'Cathy也不知道的喵~')
+            sendReply(source, u'Cathy也不知道的喵~')
             return
-        sendDanmaku(u'接下来播出的是：')
+        sendReply(source, u'接下来播出的是：')
         time.sleep(1)
         if next_last_query['title'] == "MOVIE" or next_last_query['title'] == "SPECIAL":
-            sendDanmaku(next_last_query['episodeName'])
+            sendReply(source, next_last_query['episodeName'])
             return
-        sendDanmaku(next_last_query['title'])
+        sendReply(source, next_last_query['title'])
         if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
             time.sleep(1)
-            sendDanmaku(u'这集的标题是：')
+            sendReply(source, u'这集的标题是：')
             time.sleep(1)
-            sendDanmaku(next_last_query['episodeName'])
+            sendReply(source, next_last_query['episodeName'])
     else:
         show_id = getShowID(text.replace('#next ', ''))
         if show_id == 'ERROR':
-            sendDanmaku(u'你输入的命令好像有误的喵~')
+            sendReply(source, u'你输入的命令好像有误的喵~')
             return
         next_showing = getNextShowing(show_id)
         if next_showing:
-            sendDanmaku(u'下一次播出时间（北京时间）：')
+            sendReply(source, u'下一次播出时间（北京时间）：')
             time.sleep(1)
-            sendDanmaku(fixTime(next_showing['airtime']))
+            sendReply(source, fixTime(next_showing['airtime']))
             time.sleep(1)
-            sendDanmaku(u'这集的标题是：')
+            sendReply(source, u'这集的标题是：')
             time.sleep(1)
-            sendDanmaku(next_showing['episodeName'])
+            sendReply(source, next_showing['episodeName'])
         else:
-            sendDanmaku(u'在可预见的未来没有发现放送的喵~')
+            sendReply(source, u'在可预见的未来没有发现放送的喵~')
             if getShow(text.replace('#next ', '')) == 'ERROR':
-                sendDanmaku(u'也许是你输错了数字ID喵？')
+                sendReply(source, u'也许是你输错了数字ID喵？')
 
-def newOnAir(text):
-    from main import sendDanmaku
+def newOnAir(source, text):
+    from main import sendReply
     if text.replace(' ','') != '#new':
         show_name = getShow(text.replace('#new ', ''))
         if show_name == 'ERROR':
-            sendDanmaku(u'你输入的命令好像有误的喵~')
+            sendReply(source, u'你输入的命令好像有误的喵~')
             return
     url = "https://catting.net/nep.json"
     list = requests.get(url, timeout=3).json()
     for item in list:
         if item[8] == "Cartoon Network" or item[8] == "Adult Swim" or item[8] == "TBS" or item[8] == "TNT":
             if text.replace(' ','') != '#new' and fixShowName(item[9]) == show_name:
-                sendDanmaku(u'下一次首播时间（北京时间）：')
+                sendReply(source, u'下一次首播时间（北京时间）：')
                 time.sleep(1)
-                sendDanmaku(fixTime(item[0]))
+                sendReply(source, fixTime(item[0]))
                 time.sleep(1)
-                sendDanmaku(u'这集的标题是：')
+                sendReply(source, u'这集的标题是：')
                 time.sleep(1)
-                sendDanmaku(item[10])
+                sendReply(source, item[10])
                 time.sleep(1)
                 return
             elif text.replace(' ','') == '#new':
-                sendDanmaku(u'即将在' + item[8] + u'首播')
+                sendReply(source, u'即将在' + item[8] + u'首播')
                 time.sleep(1)
-                sendDanmaku(item[9])
+                sendReply(source, item[9])
                 time.sleep(1)
-                sendDanmaku(u'播出时间（北京时间）：')
+                sendReply(source, u'播出时间（北京时间）：')
                 time.sleep(1)
-                sendDanmaku(fixTime(item[0]))
+                sendReply(source, fixTime(item[0]))
                 time.sleep(1)
-                sendDanmaku(u'这集的标题是：')
+                sendReply(source, u'这集的标题是：')
                 time.sleep(1)
-                sendDanmaku(item[10])
+                sendReply(source, item[10])
                 time.sleep(1)
                 return
     if show_name:
-        sendDanmaku(u'两周内没有发现首播的喵~')
+        sendReply(source, u'两周内没有发现首播的喵~')
     else:
-        sendDanmaku(u'Cathy也不知道的喵~')
+        sendReply(source, u'Cathy也不知道的喵~')
 
 def roomTitle(title):
     url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
