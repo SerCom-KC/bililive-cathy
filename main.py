@@ -34,7 +34,6 @@ def sendBiliMsg(uid, text):
     bilimsg_lock = True
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg"
     resp = requests.post(url,
-                         params = {"access_key": getConfig('assist', 'accesskey')},
                          data = {
                              "msg[sender_uid]": int(getConfig('assist', 'uid')),
                              "msg[receiver_id]": uid,
@@ -42,11 +41,12 @@ def sendBiliMsg(uid, text):
                              "msg[msg_type]": 1,
                              "msg[content]": '{"content":"' + text + '"}',
                              "msg[timestamp]": int(time.time())
-                         }, timeout=3).json()
+                         }, cookies=bili_cookie['assist'], timeout=3).json()
     danmaku_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
         return False
+    printlog("INFO", "Sucessfully sent bilibili private message to UID " + str(uid) + ": " + text)
     return True
 
 def sendDanmaku(text):
@@ -139,35 +139,40 @@ def checkBiliMsg():
     global bilimsg_ack_seqno
     global bilimsg_latest_seqno
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
-    if resp["code"] != 0:
-        printlog("ERROR", "Failed to receive bilibili private message.")
-        return False
-    if resp["data"]["has_more"]:
-        message = resp["data"]["messages"][0]
-        source = {"from": "bili-msg", "uid": message["sender_uid"]}
-        printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-        from plugin import commandParse
-        if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
-            sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
-            time.sleep(1)
-            sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
-        bilimsg_ack_seqno += 1
-        bilimsg_latest_seqno = resp["data"]["max_seqno"]
-    else:
-        url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
-        resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+    while True:
+        resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
         if resp["code"] != 0:
-            printlog("ERROR", "Failed to mark bilibili private message as read.")
+            printlog("ERROR", "Failed to receive bilibili private message.")
             return False
+        if resp["data"]["has_more"]:
+            message = resp["data"]["messages"][0]
+            source = {"from": "bili-msg", "uid": message["sender_uid"]}
+            printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+            from plugin import commandParse
+            if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
+                sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
+                time.sleep(1)
+                sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
+            bilimsg_ack_seqno += 1
+            bilimsg_latest_seqno = resp["data"]["max_seqno"]
+        else:
+            url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
+            resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+            if resp["code"] != 0:
+                printlog("ERROR", "Failed to mark bilibili private message as read.")
+                return False
+            return True
 
 def checkConfig():
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
         printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
-    checkToken('host')
-    time.sleep(1)
-    checkToken('assist')
+    try:
+        checkToken('host')
+        time.sleep(1)
+        checkToken('assist')
+    except requests.exceptions.Timeout:
+        pass
 
 def onexit():
     printlog("INFO", "Cathy is off.")
