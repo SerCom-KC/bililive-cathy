@@ -153,7 +153,8 @@ def checkBiliMsg():
         if resp["data"]["has_more"]:
             message = resp["data"]["messages"][0]
             source = {"from": "bili-msg", "uid": message["sender_uid"]}
-            printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+            if message["msg_type"] == 1:
+                printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
             from plugin import commandParse
             if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
                 sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
