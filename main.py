@@ -43,7 +43,7 @@ def sendBiliMsg(uid, text):
                    "msg[content]": '{"content":"' + text + '"}',
                    "msg[timestamp]": int(time.time())
                }, cookies=bili_cookie['assist']).json()
-    danmaku_lock = False
+    bilimsg_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
         return False
@@ -126,6 +126,11 @@ def startLive():
 def initBiliMsg():
     global bilimsg_ack_seqno
     global bilimsg_latest_seqno
+    url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack" # Don't parse old ones
+    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+    if resp["code"] != 0:
+        printlog("ERROR", "Failed to mark bilibili private message as read.")
+        return False
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
@@ -156,6 +161,7 @@ def checkBiliMsg():
                 sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
             bilimsg_ack_seqno += 1
             bilimsg_latest_seqno = resp["data"]["max_seqno"]
+            time.sleep(1)
         else:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
             resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
@@ -197,7 +203,7 @@ if __name__ == '__main__':
             try:
                 plugin.getSchedule()
                 checkConfig()
-                #Thread(target=checkBiliMsg).start()
+                Thread(target=checkBiliMsg).start()
                 time.sleep(5)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")
