@@ -4,9 +4,13 @@ import requests
 import sys
 import time
 from hashlib import md5
+import traceback
+import atexit
 
-def printlog(type, message):
-    print "[" + type + "] " + message
+def printlog(log_type, message):
+    print "[" + log_type + "] " + message
+    with open(sys.path[0] + '/cathy.log', 'a') as logfile:
+        logfile.write('[' + str(int(time.time())) + '][' + log_type + '] ' + message + '\n')
 
 def getRoomID():
     url = 'https://space.bilibili.com/ajax/live/getLive'

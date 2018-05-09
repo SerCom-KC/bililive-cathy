@@ -19,7 +19,8 @@ import plugin
 danmaku_lock = False
 
 def danmakuIdentify(uid, username, text, time):
-    if str(uid) == getConfig('assist', 'uid'): # don't process self
+    if str(uid) == getConfig('assist', 'uid'):
+        printlog("INFO", "Danmaku sent: " + text)
         return
     printlog("INFO", "New danmaku from " + username + " (" + str(uid) + ") at " + str(time) + ": " + text)
     if str(uid) == getConfig('host', 'uid'):
@@ -64,13 +65,11 @@ def sendDanmaku(text):
             'msg': msg
         }
         response = bilireq(url, params=params, data=data).json()
-        if response["code"] == 0:
-            printlog("INFO", "Successfully sent danmaku: " + text)
-        else:
+        if response["code"] != 0:
             printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
     except Exception as e:
         printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
-        print(e)
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
     time.sleep(1.5)
     danmaku_lock = False
 
@@ -117,7 +116,12 @@ def checkConfig():
         printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
     checkToken('host')
+    time.sleep(1)
     checkToken('assist')
+
+def onexit():
+    #Pool(processes=1).terminate()
+    printlog("INFO", "Cathy is off.")
 
 if __name__ == '__main__':
     reload(sys)
@@ -128,6 +132,7 @@ if __name__ == '__main__':
         plugin.initStream(sys.argv[2])
         quit()
     printlog('INFO', 'Cathy is on!')
+    atexit.register(onexit)
     start_time = int(time.time())
     from biliws import listenDanmaku
     Pool(processes=1).apply_async(listenDanmaku)
@@ -136,9 +141,9 @@ if __name__ == '__main__':
             try:
                 plugin.getSchedule(silent=True)
                 checkConfig()
-                time.sleep(1)
+                time.sleep(5)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")
-                print(e)
+                printlog("TRACEBACK", "\n" + traceback.format_exc())
     except KeyboardInterrupt:
             printlog('INFO', 'Force terminating...')

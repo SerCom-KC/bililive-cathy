@@ -13,7 +13,7 @@ def danmakuParse(message):
         response = json.loads(message)
     except Exception as e:
         printlog("ERROR", "Failed to parse websocket message.")
-        print e
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
         return
     if response['cmd'] == 'DANMU_MSG':
         from main import danmakuIdentify
