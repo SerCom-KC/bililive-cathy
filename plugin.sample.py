@@ -204,13 +204,13 @@ def checkSchedule(allshows, index, prev_show=''):
         return True
     return False
 
-def getSchedule(source, channel='undefined', silent=False):
+def getSchedule(source=None, channel='undefined'):
     from main import sendReply
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
         return True
-    if not silent:
+    if source:
         sendReply(source, u'稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
@@ -266,7 +266,7 @@ def nowOnAir(source):
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if not getSchedule(source):
-        sendReply(source, (u'Cathy也不知道的喵~')
+        sendReply(source, u'Cathy也不知道的喵~')
         return
     if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
         sendReply(source, u'Cathy也不知道的喵~')

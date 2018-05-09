@@ -189,7 +189,7 @@ if __name__ == '__main__':
     try:
         while True:
             try:
-                plugin.getSchedule(silent=True)
+                plugin.getSchedule()
                 checkConfig()
                 Thread(target=checkBiliMsg).start()
                 time.sleep(5)
