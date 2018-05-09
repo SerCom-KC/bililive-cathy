@@ -33,15 +33,16 @@ def sendBiliMsg(uid, text):
         time.sleep(1)
     bilimsg_lock = True
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg"
-    resp = requests.post(url,
-                         data = {
-                             "msg[sender_uid]": int(getConfig('assist', 'uid')),
-                             "msg[receiver_id]": uid,
-                             "msg[receiver_type]": 1,
-                             "msg[msg_type]": 1,
-                             "msg[content]": '{"content":"' + text + '"}',
-                             "msg[timestamp]": int(time.time())
-                         }, cookies=bili_cookie['assist'], timeout=3).json()
+    resp = bilireq(
+               url,
+               data = {
+                   "msg[sender_uid]": int(getConfig('assist', 'uid')),
+                   "msg[receiver_id]": uid,
+                   "msg[receiver_type]": 1,
+                   "msg[msg_type]": 1,
+                   "msg[content]": '{"content":"' + text + '"}',
+                   "msg[timestamp]": int(time.time())
+               }, cookies=bili_cookie['assist']).json()
     danmaku_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
@@ -196,7 +197,7 @@ if __name__ == '__main__':
             try:
                 plugin.getSchedule()
                 checkConfig()
-                Thread(target=checkBiliMsg).start()
+                #Thread(target=checkBiliMsg).start()
                 time.sleep(5)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")
