@@ -19,7 +19,7 @@ def danmakuParse(message):
         if str(response['info'][2][0]) == getConfig('assist', 'uid'):
             printlog("INFO", "Danmaku sent: " + response['info'][1])
             return
-        printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(time) + ": " + response['info'][1])
+        printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(response['info'][0][4]) + ": " + response['info'][1])
         from plugin import commandParse
         commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1], response['info'][0][4])
     if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
