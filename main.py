@@ -132,7 +132,7 @@ def listenBiliMsg():
         printlog("ERROR", "Failed to initialize bilibili private message.")
         return False
     else:
-        bilimsg_ack_seqno = response["data"]["ack_seqno"]
+        bilimsg_ack_seqno = response["data"]["latest_seqno"]
         bilimsg_latest_seqno = response["data"]["latest_seqno"]
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
     while True:
@@ -152,7 +152,7 @@ def listenBiliMsg():
             bilimsg_latest_seqno = resp["data"]["max_seqno"]
         else:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
-            resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
+            resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if resp["code"] != 0:
                 printlog("ERROR", "Failed to mark bilibili private message as read.")
                 return False
