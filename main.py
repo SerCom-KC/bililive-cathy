@@ -21,9 +21,7 @@ bilimsg_lock = False
 
 def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
-        for text in texts:
-            sendDanmaku(text)
-            time.sleep(1)
+        Thread(target=sendBatchDanmaku, args=(texts)).start()
     elif source["from"] == "bili-msg":
         sendBiliMsg(source["uid"], '\n'.join(texts))
     else:
@@ -52,10 +50,17 @@ def sendBiliMsg(uid, text):
     printlog("INFO", "Sucessfully sent bilibili private message to UID " + str(uid) + ": " + text)
     return True
 
-def sendDanmaku(text):
+def sendBatchDanmaku(texts):
     global danmaku_lock
     while danmaku_lock:
         time.sleep(1)
+    danmaku_lock = True
+    for text in texts:
+        sendDanmaku(text)
+        time.sleep(1)
+    danmaku_lock = False
+
+def sendDanmaku(text):
     if isinstance(text, str):
         msg = unicode(text, 'utf-8')
     else:
@@ -65,7 +70,6 @@ def sendDanmaku(text):
         for i in range(0, len(text), 20):
             sendDanmaku(text[i:i+20])
         return
-    danmaku_lock = True
     try:
         url = "http://api.live.bilibili.com/msg/send"
         params = {
@@ -85,7 +89,6 @@ def sendDanmaku(text):
         printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
         printlog("TRACEBACK", "\n" + traceback.format_exc())
     time.sleep(1.5)
-    danmaku_lock = False
 
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
@@ -196,4 +199,6 @@ if __name__ == '__main__':
                 printlog("ERROR", "Unexpected error occurred.")
                 printlog("TRACEBACK", "\n" + traceback.format_exc())
     except KeyboardInterrupt:
-            printlog('INFO', 'Force terminating...')
+        printlog('INFO', 'Force terminating...')
+        onexit()
+        os._exit(0)
