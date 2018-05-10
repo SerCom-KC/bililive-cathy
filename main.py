@@ -146,6 +146,8 @@ def listenBiliMsg():
             return False
         if response["data"]["has_more"]:
             message = response["data"]["messages"][0]
+            bilimsg_ack_seqno += 1
+            bilimsg_latest_seqno = response["data"]["max_seqno"]
             url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
             response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
             if response["code"] != 0:
@@ -159,9 +161,8 @@ def listenBiliMsg():
             from plugin import commandParse
             if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
-            bilimsg_ack_seqno += 1
-            bilimsg_latest_seqno = response["data"]["max_seqno"]
         else:
+            bilimsg_ack_seqno = bilimsg_latest_seqno
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
             response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0:
