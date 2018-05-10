@@ -4,10 +4,6 @@
 import os
 import re
 import sys
-from lxml import etree
-from lxml import *
-import lxml.html
-import lxml.html as H
 import time
 import datetime
 import json
