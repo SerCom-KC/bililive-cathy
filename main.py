@@ -19,11 +19,13 @@ import plugin
 danmaku_lock = False
 bilimsg_lock = False
 
-def sendReply(source, text):
+def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
-        sendDanmaku(text)
+        for text in texts:
+            sendDanmaku(text)
+            time.sleep(1)
     elif source["from"] == "bili-msg":
-        sendBiliMsg(source["uid"], text)
+        sendBiliMsg(source["uid"], '\n'.join(texts))
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
@@ -123,14 +125,7 @@ def startLive():
         #new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
         return 0
 
-def initBiliMsg():
-    global bilimsg_ack_seqno
-    global bilimsg_latest_seqno
-    url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack" # Don't parse old ones
-    resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
-    if resp["code"] != 0:
-        printlog("ERROR", "Failed to mark bilibili private message as read.")
-        return False
+def listenBiliMsg():
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
@@ -139,11 +134,6 @@ def initBiliMsg():
     else:
         bilimsg_ack_seqno = response["data"]["ack_seqno"]
         bilimsg_latest_seqno = response["data"]["latest_seqno"]
-        return True
-
-def checkBiliMsg():
-    global bilimsg_ack_seqno
-    global bilimsg_latest_seqno
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
     while True:
         resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
@@ -157,19 +147,16 @@ def checkBiliMsg():
                 printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
             from plugin import commandParse
             if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
-                sendReply(source, "喵，Cathy不是很确定你在讲什么的喵~")
-                time.sleep(1)
-                sendReply(source, "你可能需要去找我的主人 @SerCom_KC 的喵~")
+                sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
             bilimsg_ack_seqno += 1
             bilimsg_latest_seqno = resp["data"]["max_seqno"]
-            time.sleep(1)
         else:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
             resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3)
             if resp["code"] != 0:
                 printlog("ERROR", "Failed to mark bilibili private message as read.")
                 return False
-            return True
+        time.sleep(5)
 
 def checkConfig():
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
@@ -198,13 +185,12 @@ if __name__ == '__main__':
     start_time = int(time.time())
     from biliws import listenDanmaku
     Thread(target=listenDanmaku).start()
-    initBiliMsg()
+    Thread(target=listenBiliMsg).start()
     try:
         while True:
             try:
                 plugin.getSchedule()
                 checkConfig()
-                Thread(target=checkBiliMsg).start()
                 time.sleep(5)
             except Exception as e:
                 printlog("ERROR", "Unexpected error occurred.")

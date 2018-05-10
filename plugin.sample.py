@@ -11,18 +11,18 @@ def commandParse(source, text, time):
     from main import sendReply
     if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
         if text == '#status':
-            sendReply(source, u'Cathy在的喵~')
+            sendReply(source, [u'Cathy在的喵~'])
     if text == '#now':
         nowOnAir(source)
-        #sendReply(source, u'呜，Cathy的时间表被KC没收了~')
+        #sendReply(source, [u'呜，Cathy的时间表被KC没收了~'])
     elif text.find('#new') == 0:
         #newOnAir(source, text)
-        sendReply(source, u'这个功能被禁用了，非常抱歉呜喵QAQ')
+        sendReply(source, [u'这个功能被禁用了，非常抱歉呜喵QAQ'])
     elif text.find('#next') == 0:
         nextOnAir(source, text)
-        #sendReply(source, u'呜，Cathy的时间表被KC没收了~')
+        #sendReply(source, [u'呜，Cathy的时间表被KC没收了~'])
     elif text.find(u'字幕') != -1:
-        sendReply(source, u'需要英文字幕的话请前往备用直播间哦~')
+        sendReply(source, [u'需要英文字幕的话请前往备用直播间哦~'])
     else:
         return False
 
@@ -211,7 +211,7 @@ def getSchedule(source=None, channel='undefined'):
     if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
         return True
     if source:
-        sendReply(source, u'稍等一下哦，Cathy去查查放送表的喵~')
+        sendReply(source, [u'稍等一下哦，Cathy去查查放送表的喵~'])
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url, timeout=3).content)
@@ -261,110 +261,84 @@ def getSchedule(source=None, channel='undefined'):
 def nowOnAir(source):
     from main import sendReply
     if getChannel() == 'offair':
-        sendReply(source, u'现在什么都不会播的喵~')
+        sendReply(source, [u'现在什么都不会播的喵~'])
         return
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if not getSchedule(source):
-        sendReply(source, u'Cathy也不知道的喵~')
+        sendReply(source, [u'Cathy也不知道的喵~'])
         return
     if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
-        sendReply(source, u'Cathy也不知道的喵~')
+        sendReply(source, [u'Cathy也不知道的喵~'])
         return
-    sendReply(source, u'正在播出的是：')
-    time.sleep(1)
+    result = [u'正在播出的是：']
     if now_last_query['title'] == "MOVIE" or now_last_query['title'] == "SPECIAL":
-        sendReply(source, now_last_query['episodeName'])
-        return
-    sendReply(source, now_last_query['title'])
-    if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
-        time.sleep(1)
-        sendReply(source, u'这集的标题是：')
-        time.sleep(1)
-        sendReply(source, now_last_query['episodeName'])
+        result.append(now_last_query['episodeName'])
+    else:
+        result.append(now_last_query['title'])
+        if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
+            result.append(u'这集的标题是：')
+            result.append(now_last_query['episodeName'])
+    sendReply(source, result)
 
 def nextOnAir(source, text):
     from main import sendReply
     if getChannel() == 'offair':
-        sendReply(source, u'晚点再来喵~')
+        sendReply(source, [u'晚点再来喵~'])
         return
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if text.replace(' ','') == '#next': # literally what's coming up next
         if not getSchedule(source):
-            sendReply(source, u'Cathy也不知道的喵~')
+            sendReply(source, [u'Cathy也不知道的喵~'])
             return
         if next_last_query['title'] == "[AdultSwim]" or next_last_query['title'] == "Cartoon Network":
-            sendReply(source, u'Cathy也不知道的喵~')
+            sendReply(source, [u'Cathy也不知道的喵~'])
             return
-        sendReply(source, u'接下来播出的是：')
-        time.sleep(1)
+        result = [u'接下来播出的是：']
         if next_last_query['title'] == "MOVIE" or next_last_query['title'] == "SPECIAL":
-            sendReply(source, next_last_query['episodeName'])
+            result.append(next_last_query['episodeName'])
             return
-        sendReply(source, next_last_query['title'])
-        if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
-            time.sleep(1)
-            sendReply(source, u'这集的标题是：')
-            time.sleep(1)
-            sendReply(source, next_last_query['episodeName'])
+        else:
+            result.append(next_last_query['title'])
+            if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
+                result.append(u'这集的标题是：')
+                result.append(next_last_query['episodeName'])
+        sendReply(source, result)
     else:
         show_id = getShowID(text.replace('#next ', ''))
         if show_id == 'ERROR':
-            sendReply(source, u'你输入的命令好像有误的喵~')
+            sendReply(source, [u'你输入的命令好像有误的喵~'])
             return
         next_showing = getNextShowing(show_id)
         if next_showing:
-            sendReply(source, u'下一次播出时间（北京时间）：')
-            time.sleep(1)
-            sendReply(source, fixTime(next_showing['airtime']))
-            time.sleep(1)
-            sendReply(source, u'这集的标题是：')
-            time.sleep(1)
-            sendReply(source, next_showing['episodeName'])
+            sendReply(source, [u'下一次播出时间（北京时间）：', fixTime(next_showing['airtime']), u'这集的标题是：', next_showing['episodeName']])
         else:
-            sendReply(source, u'在可预见的未来没有发现放送的喵~')
+            result = [u'在可预见的未来没有发现放送的喵~'])
             if getShow(text.replace('#next ', '')) == 'ERROR':
-                sendReply(source, u'也许是你输错了数字ID喵？')
+                result.append(u'也许是你输错了数字ID喵？')
+            sendReply(source, result)
 
 def newOnAir(source, text):
     from main import sendReply
     if text.replace(' ','') != '#new':
         show_name = getShow(text.replace('#new ', ''))
         if show_name == 'ERROR':
-            sendReply(source, u'你输入的命令好像有误的喵~')
+            sendReply(source, [u'你输入的命令好像有误的喵~'])
             return
     url = "https://catting.net/nep.json"
     list = requests.get(url, timeout=3).json()
     for item in list:
         if item[8] == "Cartoon Network" or item[8] == "Adult Swim" or item[8] == "TBS" or item[8] == "TNT":
             if text.replace(' ','') != '#new' and fixShowName(item[9]) == show_name:
-                sendReply(source, u'下一次首播时间（北京时间）：')
-                time.sleep(1)
-                sendReply(source, fixTime(item[0]))
-                time.sleep(1)
-                sendReply(source, u'这集的标题是：')
-                time.sleep(1)
-                sendReply(source, item[10])
-                time.sleep(1)
+                sendReply(source, [u'下一次首播时间（北京时间）：', fixTime(item[0]), u'这集的标题是：', item[10]])
                 return
             elif text.replace(' ','') == '#new':
-                sendReply(source, u'即将在' + item[8] + u'首播')
-                time.sleep(1)
-                sendReply(source, item[9])
-                time.sleep(1)
-                sendReply(source, u'播出时间（北京时间）：')
-                time.sleep(1)
-                sendReply(source, fixTime(item[0]))
-                time.sleep(1)
-                sendReply(source, u'这集的标题是：')
-                time.sleep(1)
-                sendReply(source, item[10])
-                time.sleep(1)
+                sendReply(source, [u'即将在' + item[8] + u'首播', item[9], u'播出时间（北京时间）：', fixTime(item[0]), u'这集的标题是：', item[10]])
                 return
     if show_name:
-        sendReply(source, u'两周内没有发现首播的喵~')
+        sendReply(source, [u'两周内没有发现首播的喵~'])
     else:
-        sendReply(source, u'Cathy也不知道的喵~')
+        sendReply(source, [u'Cathy也不知道的喵~'])
 
 def roomTitle(title):
     url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
