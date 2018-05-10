@@ -134,14 +134,14 @@ def listenBiliMsg():
     else:
         bilimsg_ack_seqno = response["data"]["latest_seqno"]
         bilimsg_latest_seqno = response["data"]["latest_seqno"]
-    url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
     while True:
-        resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
-        if resp["code"] != 0:
+        url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
+        response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
+        if response["code"] != 0:
             printlog("ERROR", "Failed to receive bilibili private message.")
             return False
-        if resp["data"]["has_more"]:
-            message = resp["data"]["messages"][0]
+        if response["data"]["has_more"]:
+            message = response["data"]["messages"][0]
             source = {"from": "bili-msg", "uid": message["sender_uid"]}
             if message["msg_type"] == 1:
                 printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
@@ -149,11 +149,11 @@ def listenBiliMsg():
             if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
             bilimsg_ack_seqno += 1
-            bilimsg_latest_seqno = resp["data"]["max_seqno"]
+            bilimsg_latest_seqno = response["data"]["max_seqno"]
         else:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
-            resp = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
-            if resp["code"] != 0:
+            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+            if response["code"] != 0:
                 printlog("ERROR", "Failed to mark bilibili private message as read.")
                 return False
         time.sleep(5)
@@ -184,9 +184,9 @@ if __name__ == '__main__':
     atexit.register(onexit)
     start_time = int(time.time())
     from biliws import listenDanmaku
-    Thread(target=listenDanmaku).start()
-    Thread(target=listenBiliMsg).start()
     try:
+        Thread(target=listenDanmaku).start()
+        Thread(target=listenBiliMsg).start()
         while True:
             try:
                 plugin.getSchedule()

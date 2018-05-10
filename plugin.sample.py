@@ -313,7 +313,7 @@ def nextOnAir(source, text):
         if next_showing:
             sendReply(source, [u'下一次播出时间（北京时间）：', fixTime(next_showing['airtime']), u'这集的标题是：', next_showing['episodeName']])
         else:
-            result = [u'在可预见的未来没有发现放送的喵~'])
+            result = [u'在可预见的未来没有发现放送的喵~']
             if getShow(text.replace('#next ', '')) == 'ERROR':
                 result.append(u'也许是你输错了数字ID喵？')
             sendReply(source, result)
