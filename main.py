@@ -163,14 +163,14 @@ def listenBiliMsg():
                 return False
         time.sleep(5)
 
-def checkConfig():
+def checkConfig(firstrun=False):
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
         printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
     try:
-        checkToken('host')
+        checkToken('host', firstrun)
         time.sleep(1)
-        checkToken('assist')
+        checkToken('assist', firstrun)
     except requests.exceptions.Timeout:
         pass
 
@@ -180,7 +180,7 @@ def onexit():
 if __name__ == '__main__':
     reload(sys)
     sys.setdefaultencoding('utf-8')
-    checkConfig()
+    checkConfig(True)
     url = "https://api.live.bilibili.com/api/player"
     response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + bili_roomid}, timeout=3).text
     global danmaku_limit
