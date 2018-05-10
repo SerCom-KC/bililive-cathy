@@ -22,7 +22,7 @@ danmaku_limit = 20
 
 def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
-        Thread(target=sendBatchDanmaku, args=[texts]).start()
+        Thread(target=sendBatchDanmaku, args=[texts, source["username"]]).start()
     elif source["from"] == "bili-msg":
         sendBiliMsg(source["uid"], '\n'.join(texts))
     else:
@@ -44,6 +44,7 @@ def sendBiliMsg(uid, text):
                    "msg[content]": '{"content":"' + text + '"}',
                    "msg[timestamp]": int(time.time())
                }, cookies=bili_cookie['assist']).json()
+    time.sleep(5)
     bilimsg_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
@@ -51,9 +52,11 @@ def sendBiliMsg(uid, text):
     printlog("INFO", "Sucessfully sent bilibili private message to UID " + str(uid) + ": " + text)
     return True
 
-def sendBatchDanmaku(texts):
+def sendBatchDanmaku(texts, username):
     global danmaku_lock
     while danmaku_lock:
+        if texts[0].find("@") != 0:
+            texts.insert(0, "@" + username)
         time.sleep(1)
     danmaku_lock = True
     for text in texts:
@@ -147,9 +150,16 @@ def listenBiliMsg():
             return False
         if response["data"]["has_more"]:
             message = response["data"]["messages"][0]
-            source = {"from": "bili-msg", "uid": message["sender_uid"]}
+            url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
+            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"} timeout=3).json()
+            if response["code"] != 0:
+                printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
+                username = ""
+            else:
+                username = response["data"][str(message["sender_uid"])]["info"]["uname"]
+            source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
             if message["msg_type"] == 1:
-                printlog("INFO", "New bilibili PM from UID " + str(source["uid"]) + " at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+                printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
             from plugin import commandParse
             if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
