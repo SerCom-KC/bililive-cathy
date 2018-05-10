@@ -12,7 +12,7 @@ def commandParse(source, text, time):
     if text == '#status':
         if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
             sendReply(source, [u'Cathy在的喵~'])
-    if text == '#now':
+    elif text == '#now':
         nowOnAir(source)
         #sendReply(source, [u'呜，Cathy的时间表被KC没收了~'])
     elif text.find('#new') == 0:
