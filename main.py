@@ -21,7 +21,7 @@ bilimsg_lock = False
 
 def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
-        Thread(target=sendBatchDanmaku, args=(texts)).start()
+        Thread(target=sendBatchDanmaku, args=[texts]).start()
     elif source["from"] == "bili-msg":
         sendBiliMsg(source["uid"], '\n'.join(texts))
     else:
