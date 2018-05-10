@@ -18,6 +18,7 @@ import plugin
 
 danmaku_lock = False
 bilimsg_lock = False
+danmaku_limit = 20
 
 def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
@@ -61,14 +62,15 @@ def sendBatchDanmaku(texts):
     danmaku_lock = False
 
 def sendDanmaku(text):
+    global danmaku_limit
     if isinstance(text, str):
         msg = unicode(text, 'utf-8')
     else:
         msg = text
-    if len(msg) > 20:
+    if len(msg) > danmaku_limit:
         count = 1
-        for i in range(0, len(text), 20):
-            sendDanmaku(text[i:i+20])
+        for i in range(0, len(text), danmaku_limit):
+            sendDanmaku(text[i:i+danmaku_limit])
         return
     try:
         url = "http://api.live.bilibili.com/msg/send"
@@ -179,6 +181,10 @@ if __name__ == '__main__':
     reload(sys)
     sys.setdefaultencoding('utf-8')
     checkConfig()
+    url = "https://api.live.bilibili.com/api/player"
+    response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + bili_roomid}, timeout=3).text
+    global danmaku_limit
+    danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('', '</msg_length>'))
     global start_time
     if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
         plugin.initStream(sys.argv[2])
