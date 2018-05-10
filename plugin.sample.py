@@ -9,8 +9,8 @@ import re
 
 def commandParse(source, text, time):
     from main import sendReply
-    if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
-        if text == '#status':
+    if text == '#status':
+        if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
             sendReply(source, [u'Cathy在的喵~'])
     if text == '#now':
         nowOnAir(source)
@@ -25,6 +25,7 @@ def commandParse(source, text, time):
         sendReply(source, [u'需要英文字幕的话请前往备用直播间哦~'])
     else:
         return False
+    return True
 
 def getShow(id):
     id = id.lower()
