@@ -147,7 +147,7 @@ def listenBiliMsg():
         if response["data"]["has_more"]:
             message = response["data"]["messages"][0]
             url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
-            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"} timeout=3).json()
+            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
             if response["code"] != 0:
                 printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
                 username = ""
