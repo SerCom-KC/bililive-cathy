@@ -48,9 +48,8 @@ def sendBiliMsg(uid, text):
     bilimsg_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
-        return False
+        return
     printlog("INFO", "Sucessfully sent bilibili private message to UID " + str(uid) + ": " + text)
-    return True
 
 def sendDanmaku(text):
     global danmaku_lock

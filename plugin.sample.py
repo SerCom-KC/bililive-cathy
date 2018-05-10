@@ -25,6 +25,7 @@ def commandParse(source, text, time):
         sendReply(source, [u'需要英文字幕的话请前往备用直播间哦~'])
     else:
         return False
+    return True
 
 def getShow(id):
     id = id.lower()
