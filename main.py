@@ -62,10 +62,7 @@ def sendBatchDanmaku(texts, username):
 
 def sendDanmaku(text):
     global danmaku_limit
-    if isinstance(text, str):
-        msg = unicode(text, 'utf-8')
-    else:
-        msg = text
+    msg = text
     if len(msg) > danmaku_limit:
         count = 1
         for i in range(0, len(text), danmaku_limit):
