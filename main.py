@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -186,9 +186,7 @@ def checkConfig(firstrun=False):
 def onexit():
     printlog("INFO", "Cathy is off.")
 
-if __name__ == '__main__':
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+def main():
     checkConfig(True)
     global start_time
     if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
@@ -214,3 +212,6 @@ if __name__ == '__main__':
         printlog('INFO', 'Force terminating...')
         onexit()
         os._exit(0)
+
+if __name__ == "__main__":
+    main()

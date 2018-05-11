@@ -8,7 +8,7 @@ import traceback
 import atexit
 
 def printlog(log_type, message):
-    print "[" + log_type + "] " + message
+    print("[" + log_type + "] " + message)
     with open(sys.path[0] + '/cathy.log', 'a') as logfile:
         logfile.write('[' + str(int(time.time())) + '][' + log_type + '] ' + message + '\n')
 
@@ -28,7 +28,7 @@ def convertTime(dt):
         return int((dt - datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
 
 def getConfig(section, entry=None):
-    from ConfigParser import ConfigParser
+    from configparser import ConfigParser
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
     if entry:
@@ -36,7 +36,7 @@ def getConfig(section, entry=None):
     return dict(config.items(section))
 
 def setConfig(section, entry, value):
-    from ConfigParser import ConfigParser
+    from configparser import ConfigParser
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
     config.set(section, entry, value)
@@ -46,7 +46,7 @@ def setConfig(section, entry, value):
 def checkToken(user, firstrun=False):
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
-        auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5('api=' + callback_url + getConfig('oauth', 'appsecret')).hexdigest()
+        auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
         check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
         resp = requests.get(check_auth_url, timeout=3).json()
         if resp['code'] == -1:
@@ -95,13 +95,13 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
         data['ts'] = str(int(time.time()))
         data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
         prestr = '&'.join('%s=%s' % key for key in data.iteritems())
-        data['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
+        data['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
     else:
         params['appkey'] = getConfig('oauth', 'appkey')
         params['ts'] = str(int(time.time()))
         params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
         prestr = '&'.join('%s=%s' % key for key in params.iteritems())
-        params['sign'] = md5(prestr + getConfig('oauth', 'appsecret')).hexdigest()
+        params['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
     if data == {}:
         return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False, timeout=3)
     else:
