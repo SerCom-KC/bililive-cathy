@@ -20,7 +20,7 @@ def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
         Thread(target=sendBatchDanmaku, args=[texts, source["username"]]).start()
     elif source["from"] == "bili-msg":
-        sendBiliMsg(source["uid"], '\n'.join(texts))
+        sendBiliMsg(source["uid"], r'\n'.join(texts))
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
