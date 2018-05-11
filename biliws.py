@@ -44,11 +44,11 @@ def on_message(ws, data):
         return
     count = 0
     for i in range(0, len(data), 1):
-        if data[i] == '{':
+        if data[i] == 123:
             if count == 0:
                 start = i
             count = count + 1
-        elif data[i] == '}':
+        elif data[i] == 125:
             if count == 1:
                 danmakuParse(data[start:i+1])
             count = count - 1
