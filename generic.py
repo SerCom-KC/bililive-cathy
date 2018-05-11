@@ -32,7 +32,7 @@ def setConfig(section, entry, value):
     from configparser import ConfigParser
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
-    config.set(section, entry, value)
+    config.set(section, entry, str(value))
     with open(sys.path[0] + '/config.ini', 'w') as configFile:
         config.write(configFile)
 
