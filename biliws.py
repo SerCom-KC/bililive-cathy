@@ -50,7 +50,7 @@ def on_message(ws, data):
             count = count + 1
         elif data[i] == 125:
             if count == 1:
-                danmakuParse(data[start:i+1])
+                danmakuParse(data[start:i+1].decode())
             count = count - 1
     return
 
