@@ -63,8 +63,6 @@ def on_close(ws):
     printlog("WARNING", "Disconnected with danmaku websocket server.")
 
 def listenDanmaku():
-    global bili_roomid
-    bili_roomid = getRoomID()
     logging.basicConfig()
     ws = websocket.WebSocketApp("ws://broadcastlv.chat.bilibili.com:2244/sub", on_message=on_message, on_error=on_error, on_close=on_close)
     ws.on_open = on_open
@@ -76,8 +74,7 @@ def listenDanmaku():
 
 def on_open(ws):
     def run(*args):
-        global bili_roomid
-        data = '\x00\x00\x00\x5a\x00\x10\x00\x01\x00\x00\x00\x07\x00\x00\x00\x01{"uid":0,"roomid":'+ str(bili_roomid) +',"protover":1,"platform":"web","clientver":"1.2.5"}'
+        data = '\x00\x00\x00\x5a\x00\x10\x00\x01\x00\x00\x00\x07\x00\x00\x00\x01{"uid":0,"roomid":'+ getConfig('host', 'roomid') +',"protover":1,"platform":"web","clientver":"1.2.5"}'
         ws.send(data, opcode=websocket.ABNF.OPCODE_BINARY)
 
     def heart():

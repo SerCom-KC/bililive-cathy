@@ -347,7 +347,7 @@ def roomTitle(title):
         'access_key': getConfig('host', 'accesskey')
     }
     data = {
-        'roomId': bili_roomid,
+        'roomId': getConfig('host', 'roomid'),
         'title': title
     }
     response = bilireq(url, params=params, data=data).json()

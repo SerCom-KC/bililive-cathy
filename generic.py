@@ -12,13 +12,6 @@ def printlog(log_type, message):
     with open(sys.path[0] + '/cathy.log', 'a') as logfile:
         logfile.write('[' + str(int(time.time())) + '][' + log_type + '] ' + message + '\n')
 
-def getRoomID():
-    url = 'https://space.bilibili.com/ajax/live/getLive'
-    params = {
-        'mid': getConfig('host', 'uid')
-    }
-    return requests.get(url, params=params, timeout=3).json()["data"]
-
 def convertTime(dt):
     if dt.tzinfo is None:
         return int(time.mktime(dt.timetuple()))
@@ -44,7 +37,6 @@ def setConfig(section, entry, value):
         config.write(configFile)
 
 def checkToken(user, firstrun=False):
-    global bili_roomid
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
@@ -71,8 +63,16 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
             raise SystemExit
-    if firstrun:
-        bili_roomid = getRoomID()
+    if getConfig('host', 'roomid') == '':
+        url = 'https://space.bilibili.com/ajax/live/getLive'
+        params = {
+            'mid': getConfig('host', 'uid')
+        }
+        response = requests.get(url, params=params, timeout=3).json()
+        if response["status"]:
+            setConfig('host', 'roomid', response["data"])
+        else:
+            printlog("ERROR", "Failed to get room ID of host.")
     if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
         url = 'https://passport.bilibili.com/api/login/renewToken'
         params = {
@@ -111,5 +111,4 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
 
-bili_roomid = ''
 bili_cookie = {}

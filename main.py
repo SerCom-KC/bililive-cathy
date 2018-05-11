@@ -77,7 +77,7 @@ def sendDanmaku(text):
             'access_key': getConfig('assist', 'accesskey')
         }
         data = {
-            'roomid': bili_roomid,
+            'roomid': getConfig('host', 'roomid'),
             'color': '16777215',
             'fontsize': '25',
             'mode': '1',
@@ -111,7 +111,7 @@ def startLive():
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     data = {
         'access_key': getConfig('host', 'accesskey'),
-        'room_id': bili_roomid,
+        'room_id': getConfig('host', 'roomid'),
         'platform': 'pc_link',
         'area_v2': getConfig('host', 'category')
     }
@@ -178,7 +178,7 @@ def checkConfig(firstrun=False):
         checkToken('assist', firstrun)
         if firstrun:
             url = "https://api.live.bilibili.com/api/player"
-            response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + bili_roomid}, timeout=3).text
+            response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
             danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
     except requests.exceptions.Timeout:
         pass
