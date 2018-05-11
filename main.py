@@ -169,10 +169,6 @@ def listenBiliMsg():
 
 def checkConfig(firstrun=False):
     global danmaku_limit
-    if firstrun:
-        url = "https://api.live.bilibili.com/api/player"
-        response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + bili_roomid}, timeout=3).text
-        danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
         printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
@@ -180,6 +176,10 @@ def checkConfig(firstrun=False):
         checkToken('host', firstrun)
         time.sleep(1)
         checkToken('assist', firstrun)
+        if firstrun:
+            url = "https://api.live.bilibili.com/api/player"
+            response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + bili_roomid}, timeout=3).text
+            danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
     except requests.exceptions.Timeout:
         pass
 
