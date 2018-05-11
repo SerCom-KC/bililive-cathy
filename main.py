@@ -94,7 +94,8 @@ def sendDanmaku(text):
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
     url = 'https://live.bilibili.com/bili/isliving/' + getConfig('host', 'uid')
-    live_statusdata = json.loads(requests.get(url, timeout=3).content.replace('(', '').replace(');', ''))["data"]
+    response = requests.get(url, timeout=3).text.replace('(', '').replace(');', '')
+    live_statusdata = json.loads(response)["data"]
     if live_statusdata == "":
         return False
     else:
