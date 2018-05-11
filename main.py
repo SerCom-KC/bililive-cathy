@@ -189,17 +189,17 @@ def main():
         atexit.register(onexit)
         start_time = int(time.time())
         from biliws import listenDanmaku
-            Thread(target=listenDanmaku).start()
-            if getConfig('assist', 'pm') == "1":
-                Thread(target=listenBiliMsg).start()
-            while True:
-                try:
-                    plugin.getSchedule()
-                    checkConfig()
-                    time.sleep(5)
-                except Exception:
-                    printlog("ERROR", "Unexpected error occurred.")
-                    printlog("TRACEBACK", "\n" + traceback.format_exc())
+        Thread(target=listenDanmaku).start()
+        if getConfig('assist', 'pm') == "1":
+            Thread(target=listenBiliMsg).start()
+        while True:
+            try:
+                plugin.getSchedule()
+                checkConfig()
+                time.sleep(5)
+            except Exception:
+                printlog("ERROR", "Unexpected error occurred.")
+                printlog("TRACEBACK", "\n" + traceback.format_exc())
     except KeyboardInterrupt:
         printlog('INFO', 'Force terminating...')
         onexit()
