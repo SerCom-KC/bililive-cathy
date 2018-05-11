@@ -7,10 +7,16 @@ from hashlib import md5
 import traceback
 import atexit
 
+TELEGRAM_API = "https://api.telegram.org"
+
 def printlog(log_type, message):
-    print("[" + log_type + "] " + message)
+    log_message = '[' + str(int(time.time())) + '][' + log_type + '] ' + message
+    print(log_message)
     with open(sys.path[0] + '/cathy.log', 'a') as logfile:
-        logfile.write('[' + str(int(time.time())) + '][' + log_type + '] ' + message + '\n')
+        logfile.write(log_message + '\n')
+    if getConfig('telegram', 'token') != "" and :
+        url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
+        requests.get(url, params = {"chat_id": int(getConfig('telegram', 'log_channel')), "text": log_message, "disable_notification": log_type == "INFO"})
 
 def convertTime(dt):
     if dt.tzinfo is None:
@@ -110,5 +116,3 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
     else:
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
-
-bili_cookie = {}
