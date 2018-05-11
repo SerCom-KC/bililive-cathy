@@ -58,18 +58,7 @@ def checkToken(user, firstrun=False):
         if getConfig(user, 'accesskey') == '':
             printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
             raise SystemExit
-    if getConfig(user, 'expires') != '' and int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
-        url = 'https://passport.bilibili.com/api/login/renewToken'
-        params = {
-            'access_key': getConfig(user, 'accesskey')
-        }
-        resp = bilireq(url, params=params).json()
-        if resp['code'] == 0:
-            setConfig(user, 'expires', resp['expires'])
-        else:
-            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
-            quit()
-    else:
+    if getConfig(user, 'expires') == '' or getConfig(user, 'uid') == '':
         url = 'https://passport.bilibili.com/api/oauth'
         params = {
             'access_key': getConfig(user, 'accesskey')
@@ -81,11 +70,22 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
             raise SystemExit
-        url = 'https://passport.bilibili.com/api/login/sso'
+    if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
+        url = 'https://passport.bilibili.com/api/login/renewToken'
         params = {
             'access_key': getConfig(user, 'accesskey')
         }
-        bili_cookie[user] = bilireq(url, params=params).cookies
+        resp = bilireq(url, params=params).json()
+        if resp['code'] == 0:
+            setConfig(user, 'expires', resp['expires'])
+        else:
+            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
+            quit()
+    url = 'https://passport.bilibili.com/api/login/sso'
+    params = {
+        'access_key': getConfig(user, 'accesskey')
+    }
+    bili_cookie[user] = bilireq(url, params=params).cookies
 
 def bilireq(url, params={}, headers={}, cookies={}, data={}):
     from collections import OrderedDict
