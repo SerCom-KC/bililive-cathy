@@ -70,6 +70,8 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
             raise SystemExit
+    if firstrun:
+        bili_roomid = getRoomID()
     if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
         url = 'https://passport.bilibili.com/api/login/renewToken'
         params = {
@@ -108,5 +110,5 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
         headers['Content-Type'] = 'application/x-www-form-urlencoded'
         return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
 
-bili_roomid = getRoomID()
+bili_roomid = ''
 bili_cookie = {}
