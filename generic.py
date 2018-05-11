@@ -94,13 +94,13 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}):
         data['appkey'] = getConfig('oauth', 'appkey')
         data['ts'] = str(int(time.time()))
         data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
-        prestr = '&'.join('%s=%s' % key for key in data.iteritems())
+        prestr = '&'.join('%s=%s' % key for key in data.items())
         data['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
     else:
         params['appkey'] = getConfig('oauth', 'appkey')
         params['ts'] = str(int(time.time()))
         params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
-        prestr = '&'.join('%s=%s' % key for key in params.iteritems())
+        prestr = '&'.join('%s=%s' % key for key in params.items())
         params['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
     if data == {}:
         return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False, timeout=3)
