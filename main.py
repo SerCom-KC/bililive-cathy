@@ -203,7 +203,8 @@ if __name__ == '__main__':
     from biliws import listenDanmaku
     try:
         Thread(target=listenDanmaku).start()
-        Thread(target=listenBiliMsg).start()
+        if getConfig('assist', 'pm') == "1":
+            Thread(target=listenBiliMsg).start()
         while True:
             try:
                 plugin.getSchedule()
