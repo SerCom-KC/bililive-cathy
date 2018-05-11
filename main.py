@@ -132,7 +132,6 @@ def listenBiliMsg():
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to initialize bilibili private message.")
-        return False
     else:
         seqno = response["data"]["latest_seqno"]
     while True:
@@ -140,7 +139,6 @@ def listenBiliMsg():
         response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
         if response["code"] != 0:
             printlog("ERROR", "Failed to receive bilibili private message.")
-            return False
         if "messages" in response["data"]:
             seqno = response["data"]["max_seqno"]
             for message in response["data"]["messages"]:
@@ -162,7 +160,6 @@ def listenBiliMsg():
             response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0:
                 printlog("ERROR", "Failed to mark bilibili private message as read.")
-                return False
         time.sleep(5)
 
 def checkConfig(firstrun=False):
