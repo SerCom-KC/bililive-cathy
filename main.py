@@ -134,10 +134,11 @@ def listenBiliMsg():
         printlog("ERROR", "Failed to initialize bilibili private message. API says " + response["msg"])
     else:
         seqno = response["data"]["latest_seqno"]
+    s = requests.Session()
     while True:
         try:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
+            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=6).json()
             if response["code"] != 0:
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
             if "messages" in response["data"]:
@@ -156,12 +157,7 @@ def listenBiliMsg():
                     from plugin import commandParse
                     if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
                         sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
-            else:
-                url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
-                response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
-                if response["code"] != 0:
-                    printlog("ERROR", "Failed to mark bilibili private message as read.")
-            time.sleep(5)
+            time.sleep(1)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing private messages.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
