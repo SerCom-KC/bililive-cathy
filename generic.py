@@ -42,6 +42,13 @@ def setConfig(section, entry, value):
     with open(sys.path[0] + '/config.ini', 'w') as configFile:
         config.write(configFile)
 
+def getBiliCookie(user):
+    url = 'https://passport.bilibili.com/api/login/sso'
+    params = {
+        'access_key': getConfig(user, 'accesskey')
+    }
+    return bilireq(url, params=params).cookies
+
 def checkToken(user, firstrun=False):
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
@@ -90,11 +97,6 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
             quit()
-    url = 'https://passport.bilibili.com/api/login/sso'
-    params = {
-        'access_key': getConfig(user, 'accesskey')
-    }
-    bili_cookie[user] = bilireq(url, params=params).cookies
 
 def bilireq(url, params={}, headers={}, cookies={}, data={}):
     from collections import OrderedDict

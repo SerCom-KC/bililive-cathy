@@ -39,7 +39,7 @@ def sendBiliMsg(uid, text):
                    "msg[msg_type]": 1,
                    "msg[content]": '{"content":"' + text + '"}',
                    "msg[timestamp]": int(time.time())
-               }, cookies=bili_cookie['assist']).json()
+               }, cookies=getBiliCookie('assist')).json()
     time.sleep(1)
     bilimsg_lock = False
     if resp["code"] != 0:
