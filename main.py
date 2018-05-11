@@ -156,7 +156,7 @@ def listenBiliMsg():
                         printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                     from plugin import commandParse
                     if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
-                        sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
+                        sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
             time.sleep(1)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing private messages.")

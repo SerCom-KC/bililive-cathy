@@ -24,7 +24,39 @@ def commandParse(source, text, time):
         nextOnAir(source, text)
         #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('字幕') != -1:
-        sendReply(source, ['需要英文字幕的话请前往备用直播间哦~'])
+        sendReply(source, ['需要英文字幕的话请前往备用直播间喵~'])
+    elif text == '#help'
+        if source["from"] == "bili-danmaku":
+            sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
+        else:
+            sendReply(source, ['当前支持的命令有以下这些的喵~',
+                               '',
+                               '#now',
+                               '如果你想知道B站直播间正在放的是什么剧的话，请发送这个命令喵~',
+                               '不过要注意的是，如果当前播出的剧是11分钟一集的话，有可能会显示两集的标题（也就是当前的半小时档），而且跟实际放送顺序不一定相同的喵~',
+                               '',
+                               '#next',
+                               '如果你想知道B站直播间接下来会放什么剧的话，请发送这个命令喵~'，
+                               '跟#now一样有可能会显示两集的标题（也就是接下来的半小时档），所以请一定按实际情况为准的喵~',
+                               '想知道自己想看的剧什么时候放的话，请在后面加上这个剧的缩写或者数字ID（特纳API中使用的ID，不知道的话不要乱试喵）',
+                               '比如 #next su 这样的喵~',
+                               '但是请注意多数情况下是重播而不是更新的喵~',
+                               '支持的缩写列表请看下面的喵~',
+                               '',
+                               '当前支持的缩写列表：',
+                               'tawog - The Amazing World of Gumball',
+                               'cl - Clarence',
+                               'ttg - Teen Titans Go!',
+                               'tt - Teen Titans',
+                               'uni - Unikitty!',
+                               'at - Adventure Time',
+                               'ben10 - Ben 10',
+                               'wbb - We Bare Bears',
+                               'okko - OK K.O.! Let\'s Be Heroes',
+                               'fs - Final Space',
+                               'aao - Apple & Onion',
+                               'su - Steven Universe',
+                               '如果你想看的特纳剧不在这个列表里的话，请联系 @SerCom_KC 追加的喵~'])
     else:
         return False
     return True
