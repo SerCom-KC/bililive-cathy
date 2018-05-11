@@ -44,6 +44,7 @@ def setConfig(section, entry, value):
         config.write(configFile)
 
 def checkToken(user, firstrun=False):
+    global bili_roomid
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
