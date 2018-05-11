@@ -49,16 +49,20 @@ def sendBiliMsg(uid, text):
     return True
 
 def sendBatchDanmaku(texts, username):
-    global danmaku_lock
-    while danmaku_lock:
-        if texts[0].find("@") != 0:
-            texts.insert(0, "@" + username)
-        time.sleep(1)
-    danmaku_lock = True
-    for text in texts:
-        sendDanmaku(text)
-        time.sleep(1)
-    danmaku_lock = False
+    try:
+        global danmaku_lock
+        while danmaku_lock:
+            if texts[0].find("@") != 0:
+                texts.insert(0, "@" + username)
+            time.sleep(1)
+        danmaku_lock = True
+        for text in texts:
+            sendDanmaku(text)
+            time.sleep(1)
+        danmaku_lock = False
+    except Exception:
+        printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def sendDanmaku(text):
     global danmaku_limit
@@ -68,24 +72,20 @@ def sendDanmaku(text):
         for i in range(0, len(text), danmaku_limit):
             sendDanmaku(text[i:i+danmaku_limit])
         return
-    try:
-        url = "http://api.live.bilibili.com/msg/send"
-        params = {
-            'access_key': getConfig('assist', 'accesskey')
-        }
-        data = {
-            'roomid': getConfig('host', 'roomid'),
-            'color': '16777215',
-            'fontsize': '25',
-            'mode': '1',
-            'msg': msg
-        }
-        response = bilireq(url, params=params, data=data).json()
-        if response["code"] != 0:
-            printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
-    except Exception as e:
-        printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
-        printlog("TRACEBACK", "\n" + traceback.format_exc())
+    url = "http://api.live.bilibili.com/msg/send"
+    params = {
+        'access_key': getConfig('assist', 'accesskey')
+    }
+    data = {
+        'roomid': getConfig('host', 'roomid'),
+        'color': '16777215',
+        'fontsize': '25',
+        'mode': '1',
+        'msg': msg
+    }
+    response = bilireq(url, params=params, data=data).json()
+    if response["code"] != 0:
+        printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
     time.sleep(1.5)
 
 def isLiving():
@@ -135,78 +135,82 @@ def listenBiliMsg():
     else:
         seqno = response["data"]["latest_seqno"]
     while True:
-        url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-        response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
-        if response["code"] != 0:
-            printlog("ERROR", "Failed to receive bilibili private message.")
-        if "messages" in response["data"]:
-            seqno = response["data"]["max_seqno"]
-            for message in response["data"]["messages"]:
-                url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
-                response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
-                if response["code"] != 0:
-                    printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
-                    username = ""
-                else:
-                    username = response["data"][str(message["sender_uid"])]["info"]["uname"]
-                source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
-                if message["msg_type"] == 1:
-                    printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-                from plugin import commandParse
-                if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
-                    sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
-        else:
-            url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
-            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+        try:
+            url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
+            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
             if response["code"] != 0:
-                printlog("ERROR", "Failed to mark bilibili private message as read.")
-        time.sleep(5)
+                printlog("ERROR", "Failed to receive bilibili private message.")
+            if "messages" in response["data"]:
+                seqno = response["data"]["max_seqno"]
+                for message in response["data"]["messages"]:
+                    url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
+                    response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
+                    if response["code"] != 0:
+                        printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
+                        username = ""
+                    else:
+                        username = response["data"][str(message["sender_uid"])]["info"]["uname"]
+                    source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
+                    if message["msg_type"] == 1:
+                        printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+                    from plugin import commandParse
+                    if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
+                        sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
+            else:
+                url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
+                response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+                if response["code"] != 0:
+                    printlog("ERROR", "Failed to mark bilibili private message as read.")
+            time.sleep(5)
+        except Exception:
+            printlog("ERROR", "An unexpected error occurred while sending danmaku " + text)
+            printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def checkConfig(firstrun=False):
     global danmaku_limit
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
         printlog("ERROR", "You must set up OAuth application info in config.ini")
         quit()
-    try:
-        checkToken('host', firstrun)
-        time.sleep(1)
-        checkToken('assist', firstrun)
-        if firstrun:
-            url = "https://api.live.bilibili.com/api/player"
-            response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
-            danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
-    except requests.exceptions.Timeout:
-        pass
+    checkToken('host', firstrun)
+    time.sleep(1)
+    checkToken('assist', firstrun)
+    if firstrun:
+        url = "https://api.live.bilibili.com/api/player"
+        response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
+        danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
 
 def onexit():
     printlog("INFO", "Cathy is off.")
 
 def main():
-    checkConfig(True)
-    global start_time
-    if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
-        plugin.initStream(sys.argv[2])
-        quit()
-    printlog('INFO', 'Cathy is on!')
-    atexit.register(onexit)
-    start_time = int(time.time())
-    from biliws import listenDanmaku
     try:
-        Thread(target=listenDanmaku).start()
-        if getConfig('assist', 'pm') == "1":
-            Thread(target=listenBiliMsg).start()
-        while True:
-            try:
-                plugin.getSchedule()
-                checkConfig()
-                time.sleep(5)
-            except Exception as e:
-                printlog("ERROR", "Unexpected error occurred.")
-                printlog("TRACEBACK", "\n" + traceback.format_exc())
+        checkConfig(True)
+        global start_time
+        if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
+            plugin.initStream(sys.argv[2])
+            quit()
+        printlog('INFO', 'Cathy is on!')
+        atexit.register(onexit)
+        start_time = int(time.time())
+        from biliws import listenDanmaku
+            Thread(target=listenDanmaku).start()
+            if getConfig('assist', 'pm') == "1":
+                Thread(target=listenBiliMsg).start()
+            while True:
+                try:
+                    plugin.getSchedule()
+                    checkConfig()
+                    time.sleep(5)
+                except Exception:
+                    printlog("ERROR", "Unexpected error occurred.")
+                    printlog("TRACEBACK", "\n" + traceback.format_exc())
     except KeyboardInterrupt:
         printlog('INFO', 'Force terminating...')
         onexit()
         os._exit(0)
+    except Exception:
+        printlog("ERROR", "Unexpected error occurred.")
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 if __name__ == "__main__":
     main()

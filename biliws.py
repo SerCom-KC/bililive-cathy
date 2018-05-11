@@ -9,23 +9,19 @@ from generic import *
 import logging
 
 def danmakuParse(message):
-    try:
-        response = json.loads(message)
-        if response['cmd'] == 'DANMU_MSG':
-            if str(response['info'][2][0]) == getConfig('assist', 'uid'):
-                printlog("INFO", "Danmaku sent: " + response['info'][1])
-                return
-            printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(response['info'][0][4]) + ": " + response['info'][1])
-            from plugin import commandParse
-            commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1], response['info'][0][4])
-        if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
-            printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
-            from main import startLive, restartStream
-            startLive()
-            restartStream()
-    except Exception as e:
-        printlog("ERROR", "Failed to parse websocket message.")
-        printlog("TRACEBACK", "\n" + traceback.format_exc())
+    response = json.loads(message)
+    if response['cmd'] == 'DANMU_MSG':
+        if str(response['info'][2][0]) == getConfig('assist', 'uid'):
+            printlog("INFO", "Danmaku sent: " + response['info'][1])
+            return
+        printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(response['info'][0][4]) + ": " + response['info'][1])
+        from plugin import commandParse
+        commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1], response['info'][0][4])
+    if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
+        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+        from main import startLive, restartStream
+        startLive()
+        restartStream()
     return
 
 def on_message(ws, data):
@@ -67,8 +63,9 @@ def listenDanmaku():
     while True:
         try:
             ws.run_forever()
-        except:
-            pass
+        except Exception:
+            printlog("ERROR", "Unexpected error occurred on websocket.")
+            printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def on_open(ws):
     def run(*args):
@@ -79,7 +76,7 @@ def on_open(ws):
         while True:
             try:
                 ws.send("\x00\x00\x00\x1f\x00\x10\x00\x01\x00\x00\x00\x02\x00\x00\x00\x01[object Object]", opcode=websocket.ABNF.OPCODE_BINARY)
-            except:
+            except Exception:
                 break
             time.sleep(30)
 
