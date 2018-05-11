@@ -40,7 +40,7 @@ def setConfig(section, entry, value):
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
     config.set(section, entry, value)
-    with open(sys.path[0] + '/config.ini', 'wb') as configFile:
+    with open(sys.path[0] + '/config.ini', 'w') as configFile:
         config.write(configFile)
 
 def checkToken(user, firstrun=False):
