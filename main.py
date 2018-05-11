@@ -144,7 +144,7 @@ def listenBiliMsg():
         if response["code"] != 0:
             printlog("ERROR", "Failed to receive bilibili private message.")
             return False
-        if response["data"]["has_more"]:
+        if "messages" in response["data"]:
             seqno = response["data"]["max_seqno"]
             for message in response["data"]["messages"]:
                 url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
