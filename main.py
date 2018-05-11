@@ -40,7 +40,7 @@ def sendBiliMsg(uid, text):
                    "msg[content]": '{"content":"' + text + '"}',
                    "msg[timestamp]": int(time.time())
                }, cookies=bili_cookie['assist']).json()
-    time.sleep(5)
+    time.sleep(1)
     bilimsg_lock = False
     if resp["code"] != 0:
         printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text)
@@ -136,33 +136,30 @@ def listenBiliMsg():
         printlog("ERROR", "Failed to initialize bilibili private message.")
         return False
     else:
-        bilimsg_ack_seqno = response["data"]["latest_seqno"]
-        bilimsg_latest_seqno = response["data"]["latest_seqno"]
+        seqno = response["data"]["latest_seqno"]
     while True:
         url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-        response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": bilimsg_ack_seqno, "msg_count": 1, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
+        response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=3).json()
         if response["code"] != 0:
             printlog("ERROR", "Failed to receive bilibili private message.")
             return False
         if response["data"]["has_more"]:
-            message = response["data"]["messages"][0]
-            bilimsg_ack_seqno += 1
-            bilimsg_latest_seqno = response["data"]["max_seqno"]
-            url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
-            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
-            if response["code"] != 0:
-                printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
-                username = ""
-            else:
-                username = response["data"][str(message["sender_uid"])]["info"]["uname"]
-            source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
-            if message["msg_type"] == 1:
-                printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-            from plugin import commandParse
-            if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
-                sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
+            seqno = response["data"]["max_seqno"]
+            for message in response["data"]["messages"]:
+                url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
+                response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
+                if response["code"] != 0:
+                    printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ".")
+                    username = ""
+                else:
+                    username = response["data"][str(message["sender_uid"])]["info"]["uname"]
+                source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
+                if message["msg_type"] == 1:
+                    printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+                from plugin import commandParse
+                if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
+                    sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC 的喵~"])
         else:
-            bilimsg_ack_seqno = bilimsg_latest_seqno
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/read_ack"
             response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0:
