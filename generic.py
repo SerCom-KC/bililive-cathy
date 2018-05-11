@@ -14,7 +14,7 @@ def printlog(log_type, message):
     print(log_message)
     with open(sys.path[0] + '/cathy.log', 'a') as logfile:
         logfile.write(log_message + '\n')
-    if getConfig('telegram', 'token') != "" and :
+    if getConfig('telegram', 'token') != "" and getConfig('telegram', 'log_channel') != "":
         url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
         requests.get(url, params = {"chat_id": int(getConfig('telegram', 'log_channel')), "text": log_message, "disable_notification": log_type == "INFO"})
 
