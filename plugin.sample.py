@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import pytz
 import re
 
-def commandParse(source, text, time):
+def commandParse(source, text):
     from main import sendReply
     if text == '#status':
         if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):

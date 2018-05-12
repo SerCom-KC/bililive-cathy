@@ -128,6 +128,7 @@ def startLive():
         return 0
 
 def listenBiliMsg():
+    from plugin import commandParse
     url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
@@ -141,7 +142,7 @@ def listenBiliMsg():
             response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=6).json()
             if response["code"] != 0:
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
-            if "messages" in response["data"]:
+            elif "messages" in response["data"]:
                 seqno = response["data"]["max_seqno"]
                 for message in response["data"]["messages"]:
                     url = "https://api.vc.bilibili.com/account/v1/user/infos"
@@ -154,12 +155,12 @@ def listenBiliMsg():
                     source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
                     if message["msg_type"] == 1:
                         printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-                    from plugin import commandParse
-                    if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"], message["timestamp"]):
+                    if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                         sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
             time.sleep(1)
         except Exception:
-            printlog("ERROR", "An unexpected error occurred while processing private messages.")
+            printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
+            printlog("TRACEBACK", "\n" + traceback.format_exc())
             printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def checkConfig(firstrun=False):

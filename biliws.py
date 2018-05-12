@@ -16,7 +16,7 @@ def danmakuParse(message):
             return
         printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(response['info'][0][4]) + ": " + response['info'][1])
         from plugin import commandParse
-        commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1], response['info'][0][4])
+        commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1])
     if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
         printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
         from main import startLive, restartStream
