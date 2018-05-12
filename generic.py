@@ -36,7 +36,7 @@ def getConfig(section, entry=None):
 
 def setConfig(section, entry, value):
     from configparser import ConfigParser
-    value = value.replace('%', '%%')
+    value = str(value).replace('%', '%%')
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
     config.set(section, entry, str(value))
