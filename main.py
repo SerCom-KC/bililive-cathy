@@ -79,7 +79,7 @@ def sendTelegramMsg(source, text):
 def answerTelegramInlineQuery(source, results):
     #printlog("INFO", "Answering Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + repr(results))
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/answerInlineQuery"
-    response = requests.get(url, params = {"inline_query_id": source["id"], "results": results, "cache_time": 0}, timeout=3).json()
+    response = requests.get(url, params = {"inline_query_id": source["id"], "results": json.dumps(results), "cache_time": 0}, timeout=3).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to answer Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "). API says " + response["description"])
         return False
