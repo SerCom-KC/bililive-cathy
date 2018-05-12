@@ -16,11 +16,30 @@ danmaku_lock = False
 bilimsg_lock = False
 danmaku_limit = 20
 
-def sendReply(source, texts):
+def sendReply(source, responses, type="text"):
     if source["from"] == "bili-danmaku":
-        Thread(target=sendBatchDanmaku, args=[texts, source["username"]]).start()
+        Thread(target=sendBatchDanmaku, args=[responses, source["username"]]).start()
     elif source["from"] == "bili-msg":
-        sendBiliMsg(source, r'\n'.join(texts))
+        sendBiliMsg(source, r'\n'.join(responses))
+    elif source["from"] == "telegram-private":
+        sendTelegramMsg(source, '\n'.join(responses))
+    elif source["from"] == "telegram-inlinequery":
+        if type == "telegram-inlinequeryresult":
+            results = responses
+        else:
+            results = [{"type": "article", "id": str(source["id"] + int(time.time())), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
+        answerTelegramInlineQuery(source, results)
+    else:
+        printlog("ERROR", "Invalid sendReply source!")
+
+def sendBusy(source, text="稍等一下的喵~")
+    if source["from"] == "bili-danmaku" or source["from"] == "bili-msg":
+        sendReply(source, [text])
+    elif source["from"] == "telegram-private":
+        url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendChatAction"
+        requests.get(url, params = {"chat_id": source["chat"]["id"], "action": "typing"}, timeout=1)
+    elif source["from"] == "telegram-inlinequery":
+        pass
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
@@ -46,6 +65,25 @@ def sendBiliMsg(source, text):
         printlog("ERROR", "Failed to send bilibili private message to " + source["username"] + " (" + str(source["uid"]) + "): " + text + ". API says " + resp["msg"])
         return False
     printlog("INFO", "Sucessfully sent bilibili private message to " + source["username"] + " (" + str(source["uid"]) + "): " + text)
+    return True
+
+def sendTelegramMsg(source, text):
+    url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
+    response = requests.get(url, params = {"chat_id": source["chat"]["id"], "text": text, "reply_to_message_id": source["message_id"]}, timeout=3)
+    if not response["ok"]:
+        printlog("ERROR", "Failed to send Telegram private message to " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + text + ". API says " + response["description"])
+        return False
+    printlog("INFO", "Sucessfully sent Telegram private message to " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + text)
+    return True
+
+def answerTelegramInlineQuery(source, results):
+    printlog("INFO", "Answering Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + repr(results))
+    url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/answerInlineQuery"
+    response = requests.get(url, params = {"inline_query_id": source["id"], "results": results, "cache_time": 0}, timeout=3)
+    if not response["ok"]:
+        printlog("ERROR", "Failed to answer Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "). API says " + response["description"])
+        return False
+    printlog("INFO", "Sucessfully answered Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + ").")
     return True
 
 def sendBatchDanmaku(texts, username):
@@ -161,6 +199,43 @@ def listenBiliMsg():
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
+
+def listenTelegramUpdate():
+    from plugin import commandParse
+    offset = getConfig('telegram', 'update_offset')
+    s = requests.Session()
+    url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
+    bot_username = s.get(url, timeout=3).json()["username"]
+    while True:
+        try:
+            url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
+            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 6, "allowed_updates": ["message", "inline_query"]}, timeout=10)
+            if not response["ok"]:
+                printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"])
+            else:
+                for update in response["result"]:
+                    printlog("INFO", "Parsing Telegram update: " + repr(update))
+                    offset = update["update_id"]
+                    if "message" in update:
+                        message = update["message"]
+                        if message["chat"]["type"] == "private":
+                            source = {"from": "telegram-private", "user": message["from"], "chat": message["chat"], "message_id": message["message_id"]}
+                            if "text" in message:
+                                printlog("INFO", "New Telegram PM from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + ") at " + str(message["date"]) + ": " + message["text"])
+                                text = message["text"]
+                                text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text)
+                                text = text.replace('/', '#', 1) if text[0] == '/'
+                            if not "text" in message or not commandParse(source, text)
+                                sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @szescxz，或者发送 /help 获取命令列表的喵~"])
+                    elif "inline_query" in update:
+                        query = update["inline_query"]
+                        source = {"from": "telegram-inlinequery", "user": message["from"], "id": query["id"]}
+                        printlog("INFO", "New Telegram inline query from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + "): " + query["query"])
+                        if not commandParse(source, query["query"]):
+                            sendReply(source, ["喵，Cathy不是很确定你在问什么的喵~", "你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"])
+        time.sleep(1)
+        except Exception:
+            printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def checkConfig(firstrun=False):
@@ -178,6 +253,11 @@ def checkConfig(firstrun=False):
         url = "https://api.live.bilibili.com/api/player"
         response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
         danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
+    if getConfig('telegram', 'token') != "":
+        url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
+        if not requests.get(url, timeout=3).json()["ok"]:
+            printlog("ERROR", "Your Telegram bot token seems invalid. Please check your config.ini")
+            raise SystemExit
 
 def onexit():
     printlog("INFO", "Cathy is off.")

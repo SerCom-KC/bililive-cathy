@@ -276,13 +276,13 @@ def checkSchedule(allshows, index, prev_show=''):
     return False
 
 def getSchedule(source=None, channel='undefined'):
-    from main import sendReply
+    from main import sendReply, sendBusy
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
         return True
     if source:
-        sendReply(source, ['稍等一下哦，Cathy去查查放送表的喵~'])
+        sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url, timeout=3).content)
@@ -390,25 +390,55 @@ def nextOnAir(source, text):
             sendReply(source, result)
 
 def newOnAir(source, text):
-    from main import sendReply
+    from main import sendReply, sendBusy
     if text.replace(' ','') != '#new':
         show_name = getShow(text.replace('#new ', ''))
         if show_name == 'ERROR':
             sendReply(source, ['你输入的命令好像有误的喵~'])
             return
-    sendReply(source, ['稍等一下哦，Cathy去查查放送表的喵~'])
+    sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
     url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/" + str(14*24*60)
     list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
+    if source["from"] == "telegram-inlinequery":
+        results = []
     for channel in list:
         if channel["Channel"]["Name"] == "TOON":
             for program in channel["ProgramSchedules"]:
                 if 4 == (4 & program["AiringAttrib"]):
                     if text.replace(' ','') == '#new':
-                        sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
-                        return
+                        if source["from"] != "telegram-inlinequery":
+                            sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                            return
+                        else:
+                            results.append({
+                                "type": "article",
+                                "id": str(source["id"] + int(time.time()) + len(results)),
+                                "title": program["EpisodeTitle"],
+                                "input_message_content": {
+                                    "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],
+                                    "parse_mode": 'HTML'
+                                },
+                                "description": program["Title"] + ' - ' + fixTime(program["StartTime"])
+                            })
                     if text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
-                        sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                        if source["from"] != "telegram-inlinequery":
+                            sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                            return
+                        else:
+                            results.append({
+                                "type": "article",
+                                "id": str(source["id"] + int(time.time()) + len(results)),
+                                "title": program["EpisodeTitle"],
+                                "input_message_content": {
+                                    "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],
+                                    "parse_mode": 'HTML'
+                                },
+                                "description": 'S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + fixTime(program["StartTime"])
+                            })
+                    if source["from"] == "telegram-inlinequery" and len(results) >= 5:
+                        sendReply(source, results, "telegram-inlinequeryresult")
                         return
+        break
     if show_name:
         sendReply(source, ['两周内没有发现首播的喵~'])
     else:
