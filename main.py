@@ -32,7 +32,7 @@ def sendReply(source, responses, type="text"):
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
-def sendBusy(source, text="稍等一下的喵~")
+def sendBusy(source, text="稍等一下的喵~"):
     if source["from"] == "bili-danmaku" or source["from"] == "bili-msg":
         sendReply(source, [text])
     elif source["from"] == "telegram-private":
