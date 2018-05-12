@@ -412,7 +412,7 @@ def newOnAir(source, text):
                         else:
                             results.append({
                                 "type": "article",
-                                "id": str(int(source["id"] + int(time.time()) + len(results))),
+                                "id": str(int(source["id"]) + int(time.time()) + len(results)),
                                 "title": program["EpisodeTitle"],
                                 "input_message_content": {
                                     "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],
@@ -427,7 +427,7 @@ def newOnAir(source, text):
                         else:
                             results.append({
                                 "type": "article",
-                                "id": str(int(source["id"] + int(time.time()) + len(results))),
+                                "id": str(int(source["id"]) + int(time.time()) + len(results)),
                                 "title": program["EpisodeTitle"],
                                 "input_message_content": {
                                     "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],

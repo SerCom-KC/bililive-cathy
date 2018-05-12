@@ -27,7 +27,7 @@ def sendReply(source, responses, type="text"):
         if type == "telegram-inlinequeryresult":
             results = responses
         else:
-            results = [{"type": "article", "id": str(int(source["id"] + int(time.time()))), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
+            results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
         answerTelegramInlineQuery(source, results)
     else:
         printlog("ERROR", "Invalid sendReply source!")
@@ -239,7 +239,7 @@ def listenTelegramUpdate():
                         source = {"from": "telegram-inlinequery", "user": query["from"], "id": query["id"]}
                         #printlog("INFO", "New Telegram inline query from " + query["from"]["first_name"] + " (" + str(query["from"]["id"]) + "): " + query["query"])
                         if not commandParse(source, query["query"]):
-                            results = [{"type": "article", "id": str(int(source["id"] + int(time.time()))), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
+                            results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
                             sendReply(source, results, "telegram-inlinequeryresult")
             time.sleep(1)
         except Exception:
