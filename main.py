@@ -27,7 +27,7 @@ def sendReply(source, responses, type="text"):
         if type == "telegram-inlinequeryresult":
             results = responses
         else:
-            results = [{"type": "article", "id": str(source["id"] + int(time.time())), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
+            results = [{"type": "article", "id": str(int(source["id"] + int(time.time()))), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
         answerTelegramInlineQuery(source, results)
     else:
         printlog("ERROR", "Invalid sendReply source!")
@@ -77,13 +77,13 @@ def sendTelegramMsg(source, text):
     return True
 
 def answerTelegramInlineQuery(source, results):
-    printlog("INFO", "Answering Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + repr(results))
+    #printlog("INFO", "Answering Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + repr(results))
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/answerInlineQuery"
     response = requests.get(url, params = {"inline_query_id": source["id"], "results": results, "cache_time": 0}, timeout=3).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to answer Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "). API says " + response["description"])
         return False
-    printlog("INFO", "Sucessfully answered Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + ").")
+    #printlog("INFO", "Sucessfully answered Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + ").")
     return True
 
 def sendBatchDanmaku(texts, username):
@@ -236,9 +236,10 @@ def listenTelegramUpdate():
                     elif "inline_query" in update:
                         query = update["inline_query"]
                         source = {"from": "telegram-inlinequery", "user": message["from"], "id": query["id"]}
-                        printlog("INFO", "New Telegram inline query from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + "): " + query["query"])
+                        #printlog("INFO", "New Telegram inline query from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + "): " + query["query"])
                         if not commandParse(source, query["query"]):
-                            sendReply(source, ["喵，Cathy不是很确定你在问什么的喵~", "你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"])
+                            results = [{"type": "article", "id": str(int(source["id"] + int(time.time()))), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
+                            sendReply(source, results, "telegram-inlinequeryresult")
             time.sleep(1)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
