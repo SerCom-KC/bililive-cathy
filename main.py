@@ -171,6 +171,7 @@ def listenBiliMsg():
     response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to initialize bilibili private message. API says " + response["msg"])
+        raise SystemExit
     else:
         seqno = response["data"]["latest_seqno"]
     s = requests.Session()
@@ -202,10 +203,16 @@ def listenBiliMsg():
 
 def listenTelegramUpdate():
     from plugin import commandParse
-    offset = getConfig('telegram', 'update_offset')
     s = requests.Session()
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
     bot_username = s.get(url, timeout=3).json()["result"]["username"]
+    url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
+    response = s.get(url, params = {"offset": -1, "limit": 1, "allowed_updates": ["message", "inline_query"]}, timeout=3).json()
+    if not response["ok"]:
+        printlog("ERROR", "Failed to initialize Telegram update. API says " + response["description"])
+        raise SystemExit
+    else:
+        offset = response["result"]["update_id"] + 1
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
@@ -214,8 +221,7 @@ def listenTelegramUpdate():
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"])
             else:
                 for update in response["result"]:
-                    printlog("INFO", "Parsing Telegram update: " + repr(update))
-                    offset = update["update_id"]
+                    offset = update["update_id"] + 1
                     if "message" in update:
                         message = update["message"]
                         if message["chat"]["type"] == "private":
