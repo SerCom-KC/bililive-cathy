@@ -225,7 +225,7 @@ def listenTelegramUpdate():
                                 text = message["text"]
                                 text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
                                 text = text.replace('/', '#', 1) if text[0] == '/' else text
-                            if not "text" in message or not commandParse(source, text)
+                            if not "text" in message or not commandParse(source, text):
                                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @szescxz，或者发送 /help 获取命令列表的喵~"])
                     elif "inline_query" in update:
                         query = update["inline_query"]
@@ -276,6 +276,8 @@ def main():
         Thread(target=listenDanmaku).start()
         if getConfig('assist', 'pm') == "1":
             Thread(target=listenBiliMsg).start()
+        if getConfig('telegram', 'token') != "" and getConfig('telegram', 'pm') == "1":
+            Thread(target=listenTelegramUpdate).start()
         while True:
             try:
                 plugin.getSchedule()
