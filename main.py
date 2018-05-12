@@ -212,7 +212,7 @@ def listenTelegramUpdate():
         printlog("ERROR", "Failed to initialize Telegram update. API says " + response["description"])
         raise SystemExit
     else:
-        offset = response["result"]["update_id"] + 1
+        offset = response["result"][0]["update_id"] + 1
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
