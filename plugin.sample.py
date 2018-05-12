@@ -41,9 +41,20 @@ def commandParse(source, text, time):
                                '想知道自己想看的剧什么时候放的话，请在后面加上这个剧的缩写或者数字ID（特纳API中使用的ID，不知道的话不要乱试喵）',
                                '比如 #next su 这样的喵~',
                                '但是请注意多数情况下是重播而不是更新的喵~',
-                               '支持的缩写列表请看下面的喵~',
+                               '支持的缩写列表请发送 #help list 查看的喵~',
                                '',
-                               '当前支持的缩写列表：',
+                               '#new',
+                               '如果你想知道自己想看的剧什么时候更新的话，请使用这个命令喵~',
+                               '同样也需要在后面加上这个剧的缩写，比如 #new su 这样的喵~',
+                               '请注意这个命令查到的都是TV首播，也就是说如果有网络首播的话这个命令是查不到的喵~',
+                               '如果不指定是哪个剧的话，将会返回CARTOON NETWORK/[adult swim]接下来要TV首播的内容喵~',
+                               '并且这个命令的数据源是第三方（TV Guide）而不是官方，所以请一定要以实际情况为准的喵~',
+                               '支持的缩写列表请发送 #help list 查看的喵~'])
+    elif text == '#help list':
+        if source["from"] == "bili-danmaku":
+            sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
+        else:
+            sendReply(source, ['当前支持的缩写列表：',
                                'tawog - The Amazing World of Gumball',
                                'cl - Clarence',
                                'ttg - Teen Titans Go!',
@@ -56,6 +67,11 @@ def commandParse(source, text, time):
                                'fs - Final Space',
                                'aao - Apple & Onion',
                                'su - Steven Universe',
+                               'ppg2016 - The Powerpuff Girls (2016)',
+                               'flcl - FLCL',
+                               'ram - Rick and Morty',
+                               'mp - Mr. Pickles',
+                               'mm - Mighty Magiswords',
                                '如果你想看的特纳剧不在这个列表里的话，请联系 @SerCom_KC 追加的喵~'])
     else:
         return False
@@ -85,8 +101,18 @@ def getShow(id):
         return "Final Space"
     elif id == 'aao' or id == "444772":
         return "Apple & Onion"
-    elif id == 'su' or id == '399692':
+    elif id == 'su' or id == "399692":
         return "Steven Universe"
+    elif id == 'ppg2016' or id == "425772":
+        return "The Powerpuff Girls"
+    elif id == 'flcl' or id == "447432":
+        return "FLCL"
+    elif id == 'ram' or id == "401312":
+        return "Rick and Morty"
+    elif id == 'mp' or id == "398292":
+        return "Mr. Pickles"
+    elif id == 'mm' or id == "423572":
+        return "Mighty Magiswords"
     else:
         return "ERROR"
 
@@ -116,6 +142,16 @@ def getShowID(id):
         return "444772"
     elif id == 'su':
         return "399692"
+    elif id == 'ppg2016':
+        return "425772"
+    elif id == 'flcl':
+        return "447432"
+    elif id == 'ram':
+        return "401312"
+    elif id == 'mp':
+        return "398292"
+    elif id == 'mm':
+        return "423572"
     elif id.isdigit():
         return id
     else:
