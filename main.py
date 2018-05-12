@@ -73,7 +73,7 @@ def sendBiliMsg(source, text):
 
 def sendTelegramMsg(source, text):
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
-    response = requests.get(url, params = {"chat_id": source["chat"]["id"], "text": text, "reply_to_message_id": source["message_id"]}, timeout=30).json()
+    response = requests.get(url, params = {"chat_id": source["chat"]["id"], "text": text, "reply_to_message_id": source["message_id"]}, timeout=10).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to send Telegram private message to " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + text + ". API says " + response["description"])
         return False
@@ -83,7 +83,7 @@ def sendTelegramMsg(source, text):
 def answerTelegramInlineQuery(source, results):
     #printlog("INFO", "Answering Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + repr(results))
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/answerInlineQuery"
-    response = requests.get(url, params = {"inline_query_id": source["id"], "results": json.dumps(results), "cache_time": 0}, timeout=3).json()
+    response = requests.get(url, params = {"inline_query_id": source["id"], "results": json.dumps(results), "cache_time": 60}, timeout=30).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to answer Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "). API says " + response["description"])
         return False
