@@ -211,7 +211,7 @@ def listenTelegramUpdate():
     if not response["ok"]:
         printlog("ERROR", "Failed to initialize Telegram update. API says " + response["description"])
         raise SystemExit
-    else:
+    elif response["result"] != []:
         offset = response["result"][0]["update_id"] + 1
     while True:
         try:
