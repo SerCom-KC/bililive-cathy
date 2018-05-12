@@ -12,7 +12,7 @@ TELEGRAM_API = "https://api.telegram.org"
 def printlog(log_type, message):
     log_message = '[' + str(int(time.time())) + '][' + log_type + '] ' + message
     print(log_message)
-    with open(sys.path[0] + '/cathy.log', 'a') as logfile:
+    with open(sys.path[0] + '/cathy.log', 'a', encoding='utf-8') as logfile:
         logfile.write(log_message + '\n')
     if getConfig('telegram', 'token') != "" and getConfig('telegram', 'log_channel') != "":
         url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
@@ -29,7 +29,7 @@ def convertTime(dt):
 def getConfig(section, entry=None):
     from configparser import ConfigParser
     config = ConfigParser()
-    config.read(sys.path[0] + '/config.ini')
+    config.read(sys.path[0] + '/config.ini', encoding="utf-8")
     if entry:
         return config.get(section, entry)
     return dict(config.items(section))
@@ -40,7 +40,7 @@ def setConfig(section, entry, value):
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini')
     config.set(section, entry, str(value))
-    with open(sys.path[0] + '/config.ini', 'w') as configFile:
+    with open(sys.path[0] + '/config.ini', 'w', encoding='utf-8') as configFile:
         config.write(configFile)
 
 def getBiliCookie(user):
