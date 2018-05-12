@@ -20,11 +20,11 @@ def sendReply(source, texts):
     if source["from"] == "bili-danmaku":
         Thread(target=sendBatchDanmaku, args=[texts, source["username"]]).start()
     elif source["from"] == "bili-msg":
-        sendBiliMsg(source["uid"], r'\n'.join(texts))
+        sendBiliMsg(source, r'\n'.join(texts))
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
-def sendBiliMsg(uid, text):
+def sendBiliMsg(source, text):
     global bilimsg_lock
     while bilimsg_lock:
         time.sleep(1)
@@ -34,7 +34,7 @@ def sendBiliMsg(uid, text):
                url,
                data = {
                    "msg[sender_uid]": int(getConfig('assist', 'uid')),
-                   "msg[receiver_id]": uid,
+                   "msg[receiver_id]": source["uid"],
                    "msg[receiver_type]": 1,
                    "msg[msg_type]": 1,
                    "msg[content]": '{"content":"' + text + '"}',
@@ -43,9 +43,9 @@ def sendBiliMsg(uid, text):
     time.sleep(1)
     bilimsg_lock = False
     if resp["code"] != 0:
-        printlog("ERROR", "Failed to send bilibili private message to UID " + str(uid) + ": " + text + ". API says " + resp["msg"])
+        printlog("ERROR", "Failed to send bilibili private message to " + source["username"] + " (" + str(source["uid"]) + "): " + text + ". API says " + resp["msg"])
         return False
-    printlog("INFO", "Sucessfully sent bilibili private message to UID " + str(uid) + ": " + text)
+    printlog("INFO", "Sucessfully sent bilibili private message to " + source["username"] + " (" + str(source["uid"]) + "): " + text)
     return True
 
 def sendBatchDanmaku(texts, username):
@@ -144,13 +144,13 @@ def listenBiliMsg():
             if "messages" in response["data"]:
                 seqno = response["data"]["max_seqno"]
                 for message in response["data"]["messages"]:
-                    url = "https://api.live.bilibili.com/user/v2/User/getMultiple"
-                    response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"uids[0]": message["sender_uid"], "attributes[0]": "info"}, timeout=3).json()
+                    url = "https://api.vc.bilibili.com/account/v1/user/infos"
+                    response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
                     if response["code"] != 0:
                         printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ". API says " + response["msg"])
                         username = ""
                     else:
-                        username = response["data"][str(message["sender_uid"])]["info"]["uname"]
+                        username = response["data"][0]["uname"]
                     source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
                     if message["msg_type"] == 1:
                         printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
