@@ -164,7 +164,7 @@ def listenBiliMsg():
 
 def checkConfig(firstrun=False):
     global danmaku_limit
-    if sys.stdout.encoding.lower() != 'utf-8'
+    if sys.stdout.encoding.lower() != 'utf-8':
         printlog("ERROR", "Looks like the encoding of stdout is not UTF-8. Try adding PYTHONIOENCODING=utf-8 to your environment variables first.")
         raise SystemExit
     if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
