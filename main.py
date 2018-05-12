@@ -261,11 +261,11 @@ def checkConfig(firstrun=False):
         url = "https://api.live.bilibili.com/api/player"
         response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
         danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
-    if getConfig('telegram', 'token') != "":
-        url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
-        if not requests.get(url, timeout=3).json()["ok"]:
-            printlog("ERROR", "Your Telegram bot token seems invalid. Please check your config.ini")
-            raise SystemExit
+        if getConfig('telegram', 'token') != "":
+            url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
+            if not requests.get(url, timeout=3).json()["ok"]:
+                printlog("ERROR", "Your Telegram bot token seems invalid. Please check your config.ini")
+                raise SystemExit
 
 def onexit():
     printlog("INFO", "Cathy is off.")
