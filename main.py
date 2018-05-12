@@ -69,7 +69,7 @@ def sendBiliMsg(source, text):
 
 def sendTelegramMsg(source, text):
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/sendMessage"
-    response = requests.get(url, params = {"chat_id": source["chat"]["id"], "text": text, "reply_to_message_id": source["message_id"]}, timeout=3).json()
+    response = requests.get(url, params = {"chat_id": source["chat"]["id"], "text": text, "reply_to_message_id": source["message_id"]}, timeout=30).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to send Telegram private message to " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + "): " + text + ". API says " + response["description"])
         return False
@@ -179,7 +179,7 @@ def listenBiliMsg():
         try:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
             response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=6).json()
-            if response["code"] != 0:
+            if response["code"] != 0 and response["msg"] != "timeout":
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
             elif "messages" in response["data"]:
                 seqno = response["data"]["max_seqno"]
@@ -217,7 +217,7 @@ def listenTelegramUpdate():
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
-            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 6, "allowed_updates": ["message", "inline_query"]}, timeout=10).json()
+            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
             if not response["ok"]:
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"])
             else:
