@@ -215,7 +215,7 @@ def listenTelegramUpdate():
     response = s.get(url, params = {"offset": -1, "limit": 1, "allowed_updates": ["message", "inline_query"]}, timeout=3).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to initialize Telegram update. API says " + response["description"])
-        raise SystemExit
+        return
     elif response["result"] != []:
         offset = response["result"][0]["update_id"] + 1
     while True:
@@ -223,11 +223,7 @@ def listenTelegramUpdate():
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
             response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
             if not response["ok"]:
-                if response["error_code"] == 409:
-                    time.sleep(5)
-                    continue
-                else:
-                    printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"]) 
+                printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"]) 
             else:
                 for update in response["result"]:
                     offset = update["update_id"] + 1
