@@ -509,7 +509,7 @@ def newOnAir(source, text):
         return
     if show_name:
         if source["from"] == "telegram-inlinequery":
-            results = {
+            results = [{
                 "type": "article",
                 "id": str(int(source["id"]) + int(time.time()) + len(results)),
                 "title": "两周内没有发现TV首播的喵~",
@@ -518,7 +518,7 @@ def newOnAir(source, text):
                 },
                 "description": '请注意Cathy无法查询网络先行的喵~',
                 "thumb_url": getThumbnailByShow(show_name)
-            }
+            }]
             sendReply(source, results, "telegram-inlinequeryresult")
         else:
             sendReply(source, ['两周内没有发现TV首播的喵~'])
