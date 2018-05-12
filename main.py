@@ -222,7 +222,7 @@ def listenTelegramUpdate():
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
             response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
-            if not response["ok"]:
+            if not response["ok"] and response["error_code"] != 409:
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"])
             else:
                 for update in response["result"]:
@@ -245,7 +245,7 @@ def listenTelegramUpdate():
                         if not commandParse(source, query["query"]):
                             results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
                             sendReply(source, results, "telegram-inlinequeryresult")
-            time.sleep(5)
+            time.sleep(1)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
