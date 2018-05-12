@@ -245,6 +245,7 @@ def listenTelegramUpdate():
                         if not commandParse(source, query["query"]):
                             results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
                             sendReply(source, results, "telegram-inlinequeryresult")
+            time.sleep(1)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
