@@ -29,27 +29,38 @@ def commandParse(source, text):
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
         else:
-            sendReply(source, ['当前支持的命令有以下这些的喵~',
-                               '',
-                               '#now',
-                               '如果你想知道B站直播间正在放的是什么剧的话，请发送这个命令喵~',
-                               '不过要注意的是，如果当前播出的剧是11分钟一集的话，有可能会显示两集的标题（也就是当前的半小时档），而且跟实际放送顺序不一定相同的喵~',
-                               '',
-                               '#next',
-                               '如果你想知道B站直播间接下来会放什么剧的话，请发送这个命令喵~',
-                               '跟#now一样有可能会显示两集的标题（也就是接下来的半小时档），所以请一定按实际情况为准的喵~',
-                               '想知道自己想看的剧什么时候放的话，请在后面加上这个剧的缩写或者数字ID（特纳API中使用的ID，不知道的话不要乱试喵）',
-                               '比如 #next su 这样的喵~',
-                               '但是请注意多数情况下是重播而不是更新的喵~',
-                               '支持的缩写列表请发送 #help list 查看的喵~',
-                               '',
-                               '#new',
-                               '如果你想知道自己想看的剧什么时候更新的话，请使用这个命令喵~',
-                               '同样也需要在后面加上这个剧的缩写，比如 #new su 这样的喵~',
-                               '请注意这个命令查到的都是TV首播，也就是说如果有网络首播的话这个命令是查不到的喵~',
-                               '如果不指定是哪个剧的话，将会返回CARTOON NETWORK/[adult swim]接下来要TV首播的内容喵~',
-                               '并且这个命令的数据源是第三方（TV Guide）而不是官方，所以请一定要以实际情况为准的喵~',
-                               '支持的缩写列表请发送 #help list 查看的喵~'])
+            responses = [
+                '当前支持的命令有以下这些的喵~',
+                '',
+                '#now',
+                '如果你想知道B站直播间正在放的是什么剧的话，请发送这个命令喵~',
+                '不过要注意的是，如果当前播出的剧是11分钟一集的话，有可能会显示两集的标题（也就是当前的半小时档），而且跟实际放送顺序不一定相同的喵~',
+                '',
+                '#next',
+                '如果你想知道B站直播间接下来会放什么剧的话，请发送这个命令喵~',
+                '跟#now一样有可能会显示两集的标题（也就是接下来的半小时档），所以请一定按实际情况为准的喵~',
+                '想知道自己想看的剧什么时候放的话，请在后面加上这个剧的缩写或者数字ID（特纳API中使用的ID，不知道的话不要乱试喵）',
+                '比如 #next su 这样的喵~',
+                '但是请注意多数情况下是重播而不是更新的喵~',
+                '支持的缩写列表请发送 #help list 查看的喵~',
+                '',
+                '#new',
+                '如果你想知道自己想看的剧什么时候更新的话，请使用这个命令喵~',
+                '同样也需要在后面加上这个剧的缩写，比如 #new su 这样的喵~',
+                '请注意这个命令查到的都是TV首播，也就是说如果有网络首播的话这个命令是查不到的喵~',
+                '如果不指定是哪个剧的话，将会返回CARTOON NETWORK/[adult swim]接下来要TV首播的内容喵~',
+                '并且这个命令的数据源是第三方（TV Guide）而不是官方，所以请一定要以实际情况为准的喵~',
+                '支持的缩写列表请发送 #help list 查看的喵~'
+            ]
+            if source["from"] == "telegram-inlinequery" or source["from"] == "telegram-private":
+                responses.append([
+                    '',
+                    '使用Telegram的小伙伴还可以在与我的私聊中使用 / 作为命令开头的喵~',
+                    '同时也可以在任意对话中使用inline模式唤起我的喵~不过这种情况还是只能用 # 作为命令开头的喵~',
+                    '此外目前在inline模式中使用#new命令的话，我可以一次性返回最多5个结果的喵~',
+                    '点击结果还可以显示更多信息的喵~来试试吧喵~'
+                ])
+            sendReply(source, responses)
     elif text == '#help list':
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
@@ -156,6 +167,44 @@ def getShowID(id):
         return id
     else:
         return "ERROR"
+
+def getThumbnailByShow(show_name):
+    if show_name == "The Amazing World of Gumball":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/Gumball_150x150.jpg"
+    elif show_name == "Clarence":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i78/clarence_150x150.jpg"
+    elif show_name == "Teen Titans Go!":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i74/ttg_150x150.jpg"
+    elif show_name == "Teen Titans":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/TeenTitans_150x150.jpg"
+    elif show_name == "Unikitty!":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i221/unikitty_showpickericon_150x150.png"
+    elif show_name == "Adventure Time":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/AT_150x150.jpg"
+    elif show_name == "Ben 10":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i182/ben17_150x150.jpg"
+    elif show_name == "We Bare Bears":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i101/wbb_150x150.jpg"
+    elif show_name == "OK K.O.! Let's Be Heroes":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i195/okko_showpicker_150x150.png"
+    elif show_name == "Final Space":
+        return None
+    elif show_name == "Apple & Onion":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i248/ao_showpicker_150x150.jpg"
+    elif show_name == "Steven Universe":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i81/su_showpicker_150x150_v6.jpg"
+    elif show_name == "The Powerpuff Girls":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i125/ppg_showpicker_bubbles_150x150.png"
+    elif show_name == "FLCL":
+        return None
+    elif show_name == "Rick and Morty":
+        return None
+    elif show_name == "Mr. Pickles":
+        return None
+    elif show_name "Mighty Magiswords":
+        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i97/magiswords_showpicker_150x150.jpg"
+    else:
+        return None
 
 def getChannel():
     return getConfig('extras', 'now_channel')
@@ -405,40 +454,59 @@ def newOnAir(source, text):
         if channel["Channel"]["Name"] == "TOON":
             for program in channel["ProgramSchedules"]:
                 if 4 == (4 & program["AiringAttrib"]):
+                    if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
+                        SeasonNumber = '0' + str(program["TVObject"]["SeasonNumber"]) if int(program["TVObject"]["SeasonNumber"]) < 10 else str(program["TVObject"]["SeasonNumber"])
+                        EpisodeNumber = '0' + str(program["TVObject"]["EpisodeNumber"]) if int(program["TVObject"]["EpisodeNumber"]) < 10 else str(program["TVObject"]["EpisodeNumber"])
+                        EpisodeNo = 'S' + SeasonNumber + 'E' + EpisodeNumber + ' '
+                    else:
+                        EpisodeNo = '未知集数 '
                     if text.replace(' ','') == '#new':
                         if source["from"] != "telegram-inlinequery":
                             sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                             return
                         else:
+                            message_text = '<b>' + program["Title"] + ' '
+                            message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
+                            message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
+                            message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
                             results.append({
                                 "type": "article",
                                 "id": str(int(source["id"]) + int(time.time()) + len(results)),
                                 "title": program["EpisodeTitle"],
                                 "input_message_content": {
-                                    "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],
+                                    "message_text": message_text,
                                     "parse_mode": 'HTML'
                                 },
-                                "description": program["Title"] + ' - ' + fixTime(program["StartTime"])
+                                "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
+                                "thumb_url": getThumbnailByShow(program["Title"])
                             })
                     if text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
                         if source["from"] != "telegram-inlinequery":
                             sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                             return
                         else:
+                            message_text = '<b>' + program["Title"] + ' '
+                            message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
+                            message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
+                            message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
                             results.append({
                                 "type": "article",
                                 "id": str(int(source["id"]) + int(time.time()) + len(results)),
                                 "title": program["EpisodeTitle"],
                                 "input_message_content": {
-                                    "message_text": '<b>' + program["Title"] + ' S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n' + program["CopyText"],
+                                    "message_text": message_text,
                                     "parse_mode": 'HTML'
                                 },
-                                "description": 'S' + program["TVObject"]["SeasonNumber"] + 'E' + program["TVObject"]["EpisodeNumber"] + ' - ' + fixTime(program["StartTime"])
+                                "description": EpisodeNo + '- ' + fixTime(program["StartTime"]),
+                                "thumb_url": getThumbnailByShow(program["Title"])
                             })
                     if source["from"] == "telegram-inlinequery" and len(results) >= 5:
                         sendReply(source, results, "telegram-inlinequeryresult")
                         return
         break
+    if source["from"] == "telegram-inlinequery" and results != []:
+        sendReply(source, results, "telegram-inlinequeryresult")
+        return
     if show_name:
         sendReply(source, ['两周内没有发现首播的喵~'])
     else:
