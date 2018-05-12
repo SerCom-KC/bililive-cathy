@@ -205,7 +205,7 @@ def listenTelegramUpdate():
     offset = getConfig('telegram', 'update_offset')
     s = requests.Session()
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
-    bot_username = s.get(url, timeout=3).json()["username"]
+    bot_username = s.get(url, timeout=3).json()["result"]["username"]
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
