@@ -188,7 +188,7 @@ def getThumbnailByShow(show_name):
     elif show_name == "OK K.O.! Let's Be Heroes":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i195/okko_showpicker_150x150.png"
     elif show_name == "Final Space":
-        return None
+        return ""
     elif show_name == "Apple & Onion":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i248/ao_showpicker_150x150.jpg"
     elif show_name == "Steven Universe":
@@ -196,15 +196,15 @@ def getThumbnailByShow(show_name):
     elif show_name == "The Powerpuff Girls":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i125/ppg_showpicker_bubbles_150x150.png"
     elif show_name == "FLCL":
-        return None
+        return ""
     elif show_name == "Rick and Morty":
-        return None
+        return ""
     elif show_name == "Mr. Pickles":
-        return None
-    elif show_name "Mighty Magiswords":
+        return ""
+    elif show_name == "Mighty Magiswords":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i97/magiswords_showpicker_150x150.jpg"
     else:
-        return None
+        return ""
 
 def getChannel():
     return getConfig('extras', 'now_channel')
