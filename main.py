@@ -223,8 +223,8 @@ def listenTelegramUpdate():
                             if "text" in message:
                                 printlog("INFO", "New Telegram PM from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + ") at " + str(message["date"]) + ": " + message["text"])
                                 text = message["text"]
-                                text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text)
-                                text = text.replace('/', '#', 1) if text[0] == '/'
+                                text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
+                                text = text.replace('/', '#', 1) if text[0] == '/' else text
                             if not "text" in message or not commandParse(source, text)
                                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @szescxz，或者发送 /help 获取命令列表的喵~"])
                     elif "inline_query" in update:
