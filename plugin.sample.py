@@ -53,13 +53,13 @@ def commandParse(source, text):
                 '支持的缩写列表请发送 #help list 查看的喵~'
             ]
             if source["from"] == "telegram-inlinequery" or source["from"] == "telegram-private":
-                responses.append([
+                responses.extend((
                     '',
                     '使用Telegram的小伙伴还可以在与我的私聊中使用 / 作为命令开头的喵~',
                     '同时也可以在任意对话中使用inline模式唤起我的喵~不过这种情况还是只能用 # 作为命令开头的喵~',
                     '此外目前在inline模式中使用#new命令的话，我可以一次性返回最多5个结果的喵~',
                     '点击结果还可以显示更多信息的喵~来试试吧喵~'
-                ])
+                ))
             sendReply(source, responses)
     elif text == '#help list':
         if source["from"] == "bili-danmaku":
