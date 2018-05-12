@@ -26,6 +26,10 @@ def sendReply(source, responses, type="text"):
     elif source["from"] == "telegram-inlinequery":
         if type == "telegram-inlinequeryresult":
             results = responses
+        elif len(responses) == 1:
+            results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": responses[0], "input_message_content": {"message_text": responses[0]}}]
+        elif len(responses) == 2:
+            results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": responses[0], "input_message_content": {"message_text": '\n'.join(responses)}, "description": responses[1]}]
         else:
             results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
         answerTelegramInlineQuery(source, results)

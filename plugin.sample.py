@@ -478,14 +478,14 @@ def newOnAir(source, text):
                                     "parse_mode": 'HTML'
                                 },
                                 "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
-                                "thumb_url": getThumbnailByShow(program["Title"])
+                                "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                             })
                     if text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
                         if source["from"] != "telegram-inlinequery":
                             sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                             return
                         else:
-                            message_text = '<b>' + program["Title"] + ' '
+                            message_text = '<b>' + show_name + ' '
                             message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
                             message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将在' + fixTime(program["StartTime"]) + '于' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
                             message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
@@ -498,7 +498,7 @@ def newOnAir(source, text):
                                     "parse_mode": 'HTML'
                                 },
                                 "description": EpisodeNo + '- ' + fixTime(program["StartTime"]),
-                                "thumb_url": getThumbnailByShow(program["Title"])
+                                "thumb_url": getThumbnailByShow(show_name)
                             })
                     if source["from"] == "telegram-inlinequery" and len(results) >= 5:
                         sendReply(source, results, "telegram-inlinequeryresult")
@@ -508,7 +508,20 @@ def newOnAir(source, text):
         sendReply(source, results, "telegram-inlinequeryresult")
         return
     if show_name:
-        sendReply(source, ['两周内没有发现首播的喵~'])
+        if source["from"] == "telegram-inlinequery":
+            results = {
+                "type": "article",
+                "id": str(int(source["id"]) + int(time.time()) + len(results)),
+                "title": "两周内没有发现TV首播的喵~",
+                "input_message_content": {
+                    "message_text": "两周内没有发现TV首播的喵~"
+                },
+                "description": '请注意Cathy无法查询网络先行的喵~',
+                "thumb_url": getThumbnailByShow(show_name)
+            }
+            sendReply(source, results, "telegram-inlinequeryresult")
+        else:
+            sendReply(source, ['两周内没有发现TV首播的喵~'])
     else:
         sendReply(source, ['Cathy也不知道的喵~'])
 
