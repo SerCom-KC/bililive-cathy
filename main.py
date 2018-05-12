@@ -207,6 +207,7 @@ def listenTelegramUpdate():
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
     bot_username = s.get(url, timeout=3).json()["result"]["username"]
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
+    offset = None
     response = s.get(url, params = {"offset": -1, "limit": 1, "allowed_updates": ["message", "inline_query"]}, timeout=3).json()
     if not response["ok"]:
         printlog("ERROR", "Failed to initialize Telegram update. API says " + response["description"])
