@@ -200,7 +200,7 @@ def listenBiliMsg():
                         printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                     if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                         sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
-            time.sleep(1)
+            time.sleep(5)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
@@ -245,8 +245,7 @@ def listenTelegramUpdate():
                         if not commandParse(source, query["query"]):
                             results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
                             sendReply(source, results, "telegram-inlinequeryresult")
-            if "parameters" in response:
-                time.sleep(response["parameters"]["retry_after"])
+            time.sleep(5)
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
