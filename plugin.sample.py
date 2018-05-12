@@ -18,8 +18,8 @@ def commandParse(source, text, time):
         nowOnAir(source)
         #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('#new') == 0:
-        #newOnAir(source, text)
-        sendReply(source, ['这个功能被禁用了，非常抱歉呜喵QAQ'])
+        newOnAir(source, text)
+        #sendReply(source, ['这个功能被禁用了，非常抱歉呜喵QAQ'])
     elif text.find('#next') == 0:
         nextOnAir(source, text)
         #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
@@ -360,16 +360,19 @@ def newOnAir(source, text):
         if show_name == 'ERROR':
             sendReply(source, ['你输入的命令好像有误的喵~'])
             return
-    url = "https://catting.net/nep.json"
-    list = requests.get(url, timeout=3).json()
-    for item in list:
-        if item[8] == "Cartoon Network" or item[8] == "Adult Swim" or item[8] == "TBS" or item[8] == "TNT":
-            if text.replace(' ','') != '#new' and fixShowName(item[9]) == show_name:
-                sendReply(source, ['下一次首播时间（北京时间）：', fixTime(item[0]), '这集的标题是：', item[10]])
-                return
-            elif text.replace(' ','') == '#new':
-                sendReply(source, ['即将在' + item[8] + '首播', item[9], '播出时间（北京时间）：', fixTime(item[0]), '这集的标题是：', item[10]])
-                return
+    sendReply(source, ['稍等一下哦，Cathy去查查放送表的喵~'])
+    url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/" + str(14*24*60)
+    list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
+    for channel in list:
+        if channel["Channel"]["Name"] == "TOON":
+            for program in channel["ProgramSchedules"]:
+                if 4 == (4 & program["AiringAttrib"]):
+                    if text.replace(' ','') == '#new':
+                        sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                        return
+                    if text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
+                        sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                        return
     if show_name:
         sendReply(source, ['两周内没有发现首播的喵~'])
     else:
