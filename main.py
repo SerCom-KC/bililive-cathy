@@ -214,7 +214,6 @@ def listenBiliMsg():
             printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def listenTelegramUpdate():
-    from plugin import commandParse
     s = requests.Session()
     url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
     bot_username = s.get(url, timeout=3).json()["result"]["username"]
@@ -235,28 +234,35 @@ def listenTelegramUpdate():
             else:
                 for update in response["result"]:
                     offset = update["update_id"] + 1
-                    if "message" in update:
-                        message = update["message"]
-                        if message["chat"]["type"] == "private":
-                            source = {"from": "telegram-private", "user": message["from"], "chat": message["chat"], "message_id": message["message_id"]}
-                            if "text" in message:
-                                printlog("INFO", "New Telegram PM from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + ") at " + str(message["date"]) + ": " + message["text"])
-                                text = message["text"]
-                                text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
-                                text = text.replace('/', '#', 1) if text[0] == '/' else text
-                            if not "text" in message or not commandParse(source, text):
-                                sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @szescxz，或者发送 /help 获取命令列表的喵~"])
-                    elif "inline_query" in update:
-                        query = update["inline_query"]
-                        source = {"from": "telegram-inlinequery", "user": query["from"], "id": query["id"]}
-                        #printlog("INFO", "New Telegram inline query from " + query["from"]["first_name"] + " (" + str(query["from"]["id"]) + "): " + query["query"])
-                        if not commandParse(source, query["query"]):
-                            results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
-                            sendReply(source, results, "telegram-inlinequeryresult")
-            time.sleep(1)
+                    Thread(target=parseTelegramUpdate, args=[update, bot_username]).start()
         except Exception:
-            printlog("ERROR", "An unexpected error occurred while processing Telegram updates.")
+            printlog("ERROR", "An unexpected error occurred while fetching Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
+
+def parseTelegramUpdate(update, bot_username):
+    from plugin import commandParse
+    try:
+        if "message" in update:
+            message = update["message"]
+            if message["chat"]["type"] == "private":
+                source = {"from": "telegram-private", "user": message["from"], "chat": message["chat"], "message_id": message["message_id"]}
+                if "text" in message:
+                    printlog("INFO", "New Telegram PM from " + message["from"]["first_name"] + " (" + str(message["from"]["id"]) + ") at " + str(message["date"]) + ": " + message["text"])
+                    text = message["text"]
+                    text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
+                    text = text.replace('/', '#', 1) if text[0] == '/' else text
+                    if not "text" in message or not commandParse(source, text):
+                        sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @szescxz，或者发送 /help 获取命令列表的喵~"])
+        elif "inline_query" in update:
+            query = update["inline_query"]
+            source = {"from": "telegram-inlinequery", "user": query["from"], "id": query["id"]}
+            #printlog("INFO", "New Telegram inline query from " + query["from"]["first_name"] + " (" + str(query["from"]["id"]) + "): " + query["query"])
+            if not commandParse(source, query["query"]):
+                results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
+                sendReply(source, results, "telegram-inlinequeryresult")
+    except Exception:
+        printlog("ERROR", "An unexpected error occurred while parsing Telegram updates.")
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def checkConfig(firstrun=False):
     global danmaku_limit
