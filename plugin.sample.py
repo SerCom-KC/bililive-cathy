@@ -418,9 +418,9 @@ def nowOnAir(source):
                 message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
                 message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>当前正在' + channel["Channel"]["Name"] + '放送中，' + fixTime(program["StartTime"]) + '-' + fixTime(program["EndTime"]) + '，' + program["Rating"].replace('@', '-') + '</i>\n'
                 message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
-                result = ({
+                result = [{
                     "type": "article",
-                    "id": str(int(source["id"]) + int(time.time()) + len(results)),
+                    "id": str(int(source["id"]) + int(time.time())),
                     "title": program["EpisodeTitle"],
                     "input_message_content": {
                         "message_text": message_text,
@@ -428,7 +428,7 @@ def nowOnAir(source):
                     },
                     "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
                     "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
-                })
+                }]
                 break
     sendReply(source, result, "telegram-inlinequeryresult" if source["from"] == "telegram-inlinequery" else "text")
 
