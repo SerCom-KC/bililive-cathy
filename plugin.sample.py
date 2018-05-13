@@ -334,7 +334,7 @@ def getSchedule(source=None, channel='undefined'):
         return True
     if source:
         sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
-    if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'offair':
+    if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'restrict':
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url, timeout=3).content)
         cn_start = False
@@ -382,9 +382,9 @@ def getSchedule(source=None, channel='undefined'):
 
 def nowOnAir(source):
     from main import sendReply
-    if getChannel() == 'offair':
-        sendReply(source, ['现在什么都不会播的喵~'])
-        return
+    #if getChannel() == 'restrict':
+    #    sendReply(source, ['现在什么都不会播的喵~'])
+    #    return
     if source["from"] != "telegram-inlinequery":
         now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
         if not getSchedule(source):
@@ -437,9 +437,9 @@ def nowOnAir(source):
 
 def nextOnAir(source, text):
     from main import sendReply
-    if getChannel() == 'offair':
-        sendReply(source, ['晚点再来喵~'])
-        return
+    #if getChannel() == 'restrict' and source["from"] != "telegram-inlinequery":
+    #    sendReply(source, ['晚点再来喵~'])
+    #    return
     if source["from"] != "telegram-inlinequery":
         next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
         if text.replace(' ','') == '#next': # literally what's coming up next
@@ -452,13 +452,13 @@ def nextOnAir(source, text):
             result = ['接下来播出的是：']
             if next_last_query['title'] == "MOVIE" or next_last_query['title'] == "SPECIAL":
                 result.append(next_last_query['episodeName'])
-                return
             else:
                 result.append(next_last_query['title'])
                 if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
                     result.append('这集的标题是：')
                     result.append(next_last_query['episodeName'])
             sendReply(source, result)
+            return
         else:
             show_id = getShowID(text.replace('#next ', ''))
             if show_id == 'ERROR':
@@ -472,6 +472,7 @@ def nextOnAir(source, text):
                 if getShow(text.replace('#next ', '')) == 'ERROR':
                     result.append('也许是你输错了数字ID喵？')
                 sendReply(source, result)
+            return
     else:
         if text.replace('#next ', '').isdigit():
             sendReply(source, ['呜喵~inline模式不支持数字ID的喵~', '请使用缩写的喵~'])
