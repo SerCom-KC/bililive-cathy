@@ -393,15 +393,44 @@ def nowOnAir(source):
     if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
         sendReply(source, ['Cathy也不知道的喵~'])
         return
-    result = ['正在播出的是：']
-    if now_last_query['title'] == "MOVIE" or now_last_query['title'] == "SPECIAL":
-        result.append(now_last_query['episodeName'])
-    else:
-        result.append(now_last_query['title'])
-        if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
-            result.append('这集的标题是：')
+    if source["from"] != "telegram-inlinequery":
+        result = ['正在播出的是：']
+        if now_last_query['title'] == "MOVIE" or now_last_query['title'] == "SPECIAL":
             result.append(now_last_query['episodeName'])
-    sendReply(source, result)
+        else:
+            result.append(now_last_query['title'])
+            if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
+                result.append('这集的标题是：')
+                result.append(now_last_query['episodeName'])
+    else:
+        url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/1"
+        list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=3).json()
+        for channel in list:
+            if channel["Channel"]["Name"] == "TOON":
+                program = channel["ProgramSchedules"][0]
+                if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
+                    SeasonNumber = '0' + str(program["TVObject"]["SeasonNumber"]) if int(program["TVObject"]["SeasonNumber"]) < 10 else str(program["TVObject"]["SeasonNumber"])
+                    EpisodeNumber = '0' + str(program["TVObject"]["EpisodeNumber"]) if int(program["TVObject"]["EpisodeNumber"]) < 10 else str(program["TVObject"]["EpisodeNumber"])
+                    EpisodeNo = 'S' + SeasonNumber + 'E' + EpisodeNumber + ' '
+                else:
+                    EpisodeNo = '未知集数 '
+                message_text = '<b>' + program["Title"] + ' '
+                message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
+                message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>当前正在' + channel["Channel"]["Name"] + '放送中，' + fixTime(program["StartTime"]) + '-' + fixTime(program["EndTime"]) + '，' + program["Rating"].replace('@', '-') + '</i>\n'
+                message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
+                result = ({
+                    "type": "article",
+                    "id": str(int(source["id"]) + int(time.time()) + len(results)),
+                    "title": program["EpisodeTitle"],
+                    "input_message_content": {
+                        "message_text": message_text,
+                        "parse_mode": 'HTML'
+                    },
+                    "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
+                    "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
+                })
+                break
+    sendReply(source, result, "telegram-inlinequeryresult" if source["from"] == "telegram-inlinequery" else "text")
 
 def nextOnAir(source, text):
     from main import sendReply
