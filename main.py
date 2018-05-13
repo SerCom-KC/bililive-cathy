@@ -99,12 +99,16 @@ def sendBatchDanmaku(texts, username):
             time.sleep(1)
         danmaku_lock = True
         for text in texts:
-            sendDanmaku(text)
+            for retry in range(3):
+                if sendDanmaku(text):
+                    break
+                time.sleep(5)
             time.sleep(1)
         danmaku_lock = False
     except Exception:
         printlog("ERROR", "An unexpected error occurred while sending danmakus: " + '\n'.join(texts))
         printlog("TRACEBACK", "\n" + traceback.format_exc())
+        danmaku_lock = False
 
 def sendDanmaku(text):
     global danmaku_limit
@@ -112,8 +116,9 @@ def sendDanmaku(text):
     if len(msg) > danmaku_limit:
         count = 1
         for i in range(0, len(text), danmaku_limit):
-            sendDanmaku(text[i:i+danmaku_limit])
-        return
+             if not sendDanmaku(text[i:i+danmaku_limit]):
+                 return False
+        return True
     url = "http://api.live.bilibili.com/msg/send"
     params = {
         'access_key': getConfig('assist', 'accesskey')
@@ -126,9 +131,12 @@ def sendDanmaku(text):
         'msg': msg
     }
     response = bilireq(url, params=params, data=data).json()
+    time.sleep(1.5)
     if response["code"] != 0:
         printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
-    time.sleep(1.5)
+        return False
+    else:
+        return True
 
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
