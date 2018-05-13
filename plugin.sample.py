@@ -477,6 +477,7 @@ def nextOnAir(source, text):
             sendReply(source, ['呜喵~inline模式不支持数字ID的喵~', '请使用缩写的喵~'])
             return
         result = []
+        skip_first = True
         try:
             if text.replace(' ','') == '#next':
                 url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/600"
@@ -489,6 +490,9 @@ def nextOnAir(source, text):
             for channel in list:
                 if channel["Channel"]["Name"] == "TOON":
                     for program in channel["ProgramSchedules"]:
+                        if skip_first:
+                            skip_first = False
+                            continue
                         if text.replace(' ','') != '#next' and program["Title"] != getShow(text.replace('#next ', '')):
                             continue
                         if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
