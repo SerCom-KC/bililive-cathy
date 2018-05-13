@@ -483,7 +483,7 @@ def nextOnAir(source, text):
             else:
                 if getShow(text.replace('#next ', '')) == 'ERROR':
                     sendReply(source, ['你输入的命令好像有误的喵~'])
-                return
+                    return
                 url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/20160"
             list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
             for channel in list:
@@ -501,7 +501,7 @@ def nextOnAir(source, text):
                         message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
                         message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '放送，' + program["Rating"].replace('@', '-') + '</i>\n'
                         message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
-                        result.append = ({
+                        result.append({
                             "type": "article",
                             "id": str(int(source["id"]) + int(time.time()) + len(result)),
                             "title": program["EpisodeTitle"],
@@ -512,7 +512,7 @@ def nextOnAir(source, text):
                             "description": program["Title"] + ' - ' + fixTime(program["StartTime"]) if text.replace(' ','') == '#next' else EpisodeNo + '- ' + fixTime(program["StartTime"]),
                             "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                         })
-                        if source["from"] == "telegram-inlinequery" and len(results) >= 5:
+                        if source["from"] == "telegram-inlinequery" and len(result) >= 5:
                             sendReply(source, result, "telegram-inlinequeryresult")
                             return
                     break
@@ -522,7 +522,7 @@ def nextOnAir(source, text):
         if result == []:
             result = [{
                 "type": "article",
-                "id": str(int(source["id"]) + int(time.time()) + len(results)),
+                "id": str(int(source["id"]) + int(time.time())),
                 "title": "两周内没有发现TV放送的喵~",
                 "input_message_content": {
                     "message_text": "两周内没有发现TV放送的喵~"
@@ -607,7 +607,7 @@ def newOnAir(source, text):
     if source["from"] == "telegram-inlinequery":
         results = [{
             "type": "article",
-            "id": str(int(source["id"]) + int(time.time()) + len(results)),
+            "id": str(int(source["id"]) + int(time.time())),
             "title": "两周内没有发现TV首播的喵~",
             "input_message_content": {
                 "message_text": "两周内没有发现TV首播的喵~"
