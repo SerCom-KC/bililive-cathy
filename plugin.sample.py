@@ -212,7 +212,9 @@ def getChannel():
 def fixTime(_time):
     cst_offset = int(pytz.timezone('Asia/Shanghai').utcoffset(datetime.now()).total_seconds())
     _time = time.gmtime(int(_time)+cst_offset)
-    return time.strftime('%m', _time).lstrip('0') + '月' + time.strftime('%d', _time).lstrip('0') + '日' + time.strftime('%H:%M', _time).lstrip('0')
+    hm = time.strftime('%H:%M', _time)
+    hm = hm.replace('0', '', 1) if hm[0] == '0' else hm
+    return time.strftime('%m', _time).lstrip('0') + '月' + time.strftime('%d', _time).lstrip('0') + '日' + hm
 
 # Adapted from https://gitlab.com/ctoon/cn-schedule-fetcher
 def fixShowName(show_name):
