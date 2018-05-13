@@ -190,7 +190,7 @@ def listenBiliMsg():
     while True:
         try:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data={"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=6).json()
+            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, headers = {'User-Agent': ''}, timeout=6).json()
             if response["code"] != 0 and response["msg"] != "timeout":
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
             elif "messages" in response["data"]:
