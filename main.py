@@ -208,7 +208,7 @@ def listenBiliMsg():
                     if response["code"] != 0:
                         printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
                         continue
-                    has_more = ["data"]["has_more"]
+                    has_more = response["data"]["has_more"]
                     seqno = response["data"]["max_seqno"]
                     for message in response["data"]["messages"]:
                         url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
