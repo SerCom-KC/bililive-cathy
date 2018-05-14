@@ -309,12 +309,18 @@ def onexit():
     printlog("INFO", "Cathy is off.")
 
 def main():
+    global start_time
+    for retries in range(3): # make sure initStream will run even if unexpected error occurs
+        try:
+            checkConfig(True)
+            break
+        except Exception:
+            printlog("ERROR", "Unexpected error occurred during initialization.")
+            printlog("TRACEBACK", "\n" + traceback.format_exc())
     try:
-        checkConfig(True)
-        global start_time
         if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
             plugin.initStream(sys.argv[2])
-            quit()
+            raise SystemExit
         printlog('INFO', 'Cathy is on!')
         atexit.register(onexit)
         start_time = int(time.time())
