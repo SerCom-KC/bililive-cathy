@@ -301,7 +301,7 @@ def checkSchedule(allshows, index, prev_show=''):
             'methodName': 'getEpisodeDesc',
             'showId': allshows[index].xpath('@showId')[0],
             'episodeId': allshows[index].xpath('@episodeId')[0],
-            'isFeatured': allshows[index].xpath('@isFeatured')[0]
+            'isFeatured': 'N' #allshows[index].xpath('@isFeatured')[0]
         }
         setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         setConfig('extras', 'next_airtime', convertTime(show_time))
@@ -312,19 +312,22 @@ def checkSchedule(allshows, index, prev_show=''):
             show = allshows[index-1]
         date_str = show.xpath('@date')[0] + ' ' + show.xpath('@military')[0]
         show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
-        if show.xpath('@title')[0] == "Cartoon Network": # fetch episodeName manually
-            setConfig('extras', 'now_title', getShow(show.xpath('@showId')[0]))
-            url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
-            params = {
-                'methodName': 'getEpisodeDesc',
-                'showId': show.xpath('@showId')[0],
-                'episodeId': show.xpath('@episodeId')[0],
-                'isFeatured': 'N' #show.xpath('@isFeatured')[0]
-            }
-            setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
+        if show.xpath('@title')[0] == "Cartoon Network":
+            title_fixed = getShow(show.xpath('@showId')[0])
+            if title_fixed == 'ERROR': # ID not in our database yet
+                title_fixed = "（欸，是叫什么来着喵？）"
+            setConfig('extras', 'now_title', title_fixed)
         else:
             setConfig('extras', 'now_title', fixShowName(show.xpath('@title')[0]))
-            setConfig('extras', 'now_episodeName', fixEpisodeName(show.xpath('@episodeName')[0]))
+        # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
+        url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
+        params = {
+            'methodName': 'getEpisodeDesc',
+            'showId': show.xpath('@showId')[0],
+            'episodeId': show.xpath('@episodeId')[0],
+            'isFeatured': 'N' #show.xpath('@isFeatured')[0]
+        }
+        setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         setConfig('extras', 'now_airtime', convertTime(show_time))
         printlog("INFO", "Now on air: " + getConfig('extras', 'now_title') + ' - ' + getConfig('extras', 'now_episodeName'))
         return True
