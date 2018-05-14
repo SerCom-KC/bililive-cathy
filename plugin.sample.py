@@ -319,7 +319,7 @@ def checkSchedule(allshows, index, prev_show=''):
                 'methodName': 'getEpisodeDesc',
                 'showId': show.xpath('@showId')[0],
                 'episodeId': show.xpath('@episodeId')[0],
-                'isFeatured': show.xpath('@isFeatured')[0]
+                'isFeatured': 'N' #show.xpath('@isFeatured')[0]
             }
             setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         else:
