@@ -303,7 +303,10 @@ def checkSchedule(allshows, index, prev_show=''):
             'episodeId': allshows[index].xpath('@episodeId')[0],
             'isFeatured': 'N' #allshows[index].xpath('@isFeatured')[0]
         }
-        setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
+        episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
+        if episodeName[-1] == ' ':
+            episodeName = episodeName[:-1]
+        setConfig('extras', 'next_episodeName', fixEpisodeName(episodeName))
         setConfig('extras', 'next_airtime', convertTime(show_time))
         # update now_last_query
         if prev_show != '':
@@ -327,7 +330,10 @@ def checkSchedule(allshows, index, prev_show=''):
             'episodeId': show.xpath('@episodeId')[0],
             'isFeatured': 'N' #show.xpath('@isFeatured')[0]
         }
-        setConfig('extras', 'now_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
+        episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
+        if episodeName[-1] == ' ':
+            episodeName = episodeName[:-1]
+        setConfig('extras', 'now_episodeName', fixEpisodeName(episodeName))
         setConfig('extras', 'now_airtime', convertTime(show_time))
         printlog("INFO", "Now on air: " + getConfig('extras', 'now_title') + ' - ' + getConfig('extras', 'now_episodeName'))
         return True
