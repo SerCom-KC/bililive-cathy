@@ -192,12 +192,15 @@ def listenBiliMsg():
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
             response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0:
-                if response["msg"] != "timeout":
+                if response["msg"] == "timeout":
+                    continue
+                elif response["msg"] == "":
+                    printlog("DEBUG", str(response))
+                    continue
+                else:
                     printlog("ERROR", "Failed to receive bilibili private message updates. API says " + response["msg"])
                     printlog("ERROR", "Disabling bilibili private message now.")
                     return False
-                else:
-                    continue
             if response["data"]["latest_seqno"] != seqno:
                 has_more = True
                 while has_more:
