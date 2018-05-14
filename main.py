@@ -242,7 +242,7 @@ def listenTelegramUpdate():
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
-            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 10, "allowed_updates": ["message", "inline_query"]}, timeout=10).json()
+            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
             if not response["ok"]:
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"]) 
             else:
