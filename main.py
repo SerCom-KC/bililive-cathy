@@ -179,36 +179,50 @@ def startLive():
 
 def listenBiliMsg():
     from plugin import commandParse
-    url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
-    response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+    s = requests.Session()
+    # ignore all messages prior to script startup
+    url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs" # then let's get current sequence number 
+    response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to initialize bilibili private message. API says " + response["msg"])
         raise SystemExit
-    else:
-        seqno = response["data"]["latest_seqno"]
-    s = requests.Session()
+    seqno = response["data"]["latest_seqno"] # we can't use ack_seqno at the moment, because that value can only be updated by mobile app via (maybe?) websocket
     while True:
         try:
-            url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg"
-            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, headers = {'User-Agent': ''}, timeout=6).json()
+            url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
+            response = requests.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0 and response["msg"] != "timeout":
-                printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
-            elif "messages" in response["data"]:
-                seqno = response["data"]["max_seqno"]
-                for message in response["data"]["messages"]:
-                    url = "https://api.vc.bilibili.com/account/v1/user/infos"
-                    response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
+                printlog("ERROR", "Failed to receive bilibili private message updates. API says " + response["msg"])
+                printlog("ERROR", "Disabling bilibili private message now.")
+                return False
+            if response["data"]["latest_seqno"] != seqno:
+                has_more = True
+                while has_more:
+                    url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
+                    try:
+                        response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
+                    except Exception:
+                        printlog("ERROR", "Failed to receive bilibili private message due to network error.")
+                        printlog("TRACEBACK", "\n" + traceback.format_exc())
+                        continue
                     if response["code"] != 0:
-                        printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ". API says " + response["msg"])
-                        username = ""
-                    else:
-                        username = response["data"][0]["uname"]
-                    source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
-                    if message["msg_type"] == 1:
-                        printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-                    if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
-                        sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
-            time.sleep(5)
+                        printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
+                        continue
+                    has_more = ["data"]["has_more"]
+                    seqno = response["data"]["max_seqno"]
+                    for message in response["data"]["messages"]:
+                        url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
+                        response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
+                        if response["code"] != 0:
+                            printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ". API says " + response["msg"])
+                            username = ""
+                        else:
+                            username = response["data"][0]["uname"]
+                        source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
+                        if message["msg_type"] == 1:
+                            printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+                        if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
+                            sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
@@ -228,7 +242,7 @@ def listenTelegramUpdate():
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
-            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
+            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 10, "allowed_updates": ["message", "inline_query"]}, timeout=10).json()
             if not response["ok"]:
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"]) 
             else:
