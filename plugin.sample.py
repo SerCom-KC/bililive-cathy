@@ -234,6 +234,7 @@ def fixShowName(show_name):
 def fixEpisodeName(episode_name):
     for title in episode_name.split('/'):
         fixed = re.sub(r'(.*?) $', 'The \\1', title)
+        fixed = re.sub(r'(.*?), The$', 'The \\1', fixed)
         fixed = re.sub(r'(.*?), An$', 'An \\1', fixed)
         fixed = re.sub(r'(.*?), A$', 'A \\1', fixed)
         episode_name = episode_name.replace(title, fixed)
@@ -287,19 +288,22 @@ def checkSchedule(allshows, index, prev_show=''):
     show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
     if int(time.time()) < convertTime(show_time):
         # update next_last_query
-        if allshows[index].xpath('@title')[0] == "Cartoon Network": # fetch episodeName manually
-            setConfig('extras', 'next_title', getShow(allshows[index].xpath('@showId')[0]))
-            url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
-            params = {
-                'methodName': 'getEpisodeDesc',
-                'showId': allshows[index].xpath('@showId')[0],
-                'episodeId': allshows[index].xpath('@episodeId')[0],
-                'isFeatured': allshows[index].xpath('@isFeatured')[0]
-            }
-            setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
+        if allshows[index].xpath('@title')[0] == "Cartoon Network":
+            title_fixed = getShow(allshows[index].xpath('@showId')[0])
+            if title_fixed == 'ERROR': # ID not in our database yet
+                title_fixed = "（欸，是叫什么来着喵？）"
+            setConfig('extras', 'next_title', title_fixed)
         else:
             setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@title')[0]))
-            setConfig('extras', 'next_episodeName', fixEpisodeName(allshows[index].xpath('@episodeName')[0]))
+        # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
+        url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
+        params = {
+            'methodName': 'getEpisodeDesc',
+            'showId': allshows[index].xpath('@showId')[0],
+            'episodeId': allshows[index].xpath('@episodeId')[0],
+            'isFeatured': allshows[index].xpath('@isFeatured')[0]
+        }
+        setConfig('extras', 'next_episodeName', fixEpisodeName(etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]))
         setConfig('extras', 'next_airtime', convertTime(show_time))
         # update now_last_query
         if prev_show != '':
