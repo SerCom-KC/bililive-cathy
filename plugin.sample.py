@@ -450,6 +450,7 @@ def nowOnAir(source):
 
 def nextOnAir(source, text):
     from main import sendReply
+    show_name = getShow(text.replace('#next ', ''))
     #if getChannel() == 'restrict' and source["from"] != "telegram-inlinequery":
     #    sendReply(source, ['晚点再来喵~'])
     #    return
@@ -482,7 +483,7 @@ def nextOnAir(source, text):
                 sendReply(source, ['下一次播出时间（北京时间）：', fixTime(next_showing['airtime']), '这集的标题是：', next_showing['episodeName']])
             else:
                 result = ['在可预见的未来没有发现放送的喵~']
-                if getShow(text.replace('#next ', '')) == 'ERROR':
+                if show_name == 'ERROR':
                     result.append('也许是你输错了数字ID喵？')
                 sendReply(source, result)
             return
@@ -496,7 +497,7 @@ def nextOnAir(source, text):
             if text.replace(' ','') == '#next':
                 url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/600"
             else:
-                if getShow(text.replace('#next ', '')) == 'ERROR':
+                if show_name == 'ERROR':
                     sendReply(source, ['你输入的命令好像有误的喵~'])
                     return
                 url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/20160"
@@ -507,7 +508,7 @@ def nextOnAir(source, text):
                         if skip_first:
                             skip_first = False
                             continue
-                        if text.replace(' ','') != '#next' and program["Title"] != getShow(text.replace('#next ', '')):
+                        if text.replace(' ','') != '#next' and program["Title"] != show_name:
                             continue
                         if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
                             SeasonNumber = '0' + str(program["TVObject"]["SeasonNumber"]) if int(program["TVObject"]["SeasonNumber"]) < 10 else str(program["TVObject"]["SeasonNumber"])
