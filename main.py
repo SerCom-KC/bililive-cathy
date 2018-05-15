@@ -168,7 +168,7 @@ def startLive():
         printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
         raise SystemExit
     elif response["data"]["change"] == 0:
-        printlog("ERROR", "Looks like the switch is on already.")
+        printlog("WARNING", "Looks like the switch is on already.")
         return -1
     else:
         printlog("INFO", "Live switch is now ON. The time now is " + time.ctime())
@@ -208,7 +208,7 @@ def listenBiliMsg():
                     try:
                         response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
                     except Exception:
-                        printlog("ERROR", "Failed to receive bilibili private message due to network error.")
+                        printlog("WARNING", "Failed to receive bilibili private message due to network error.")
                         printlog("TRACEBACK", "\n" + traceback.format_exc())
                         continue
                     if response["code"] != 0:
