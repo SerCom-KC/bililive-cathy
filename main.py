@@ -194,7 +194,7 @@ def listenBiliMsg():
             if response["code"] != 0:
                 if response["msg"] == "timeout":
                     continue
-                elif response["msg"] == "":
+                elif response["code"] == -6: # this code usually comes with an empty error message
                     printlog("DEBUG", str(response))
                     continue
                 else:
@@ -229,6 +229,8 @@ def listenBiliMsg():
                             printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                         if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                             sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
+        except KeyError: # even if code is 0, bilibili could still return a malformed response
+            printlog("DEBUG", str(response))
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
