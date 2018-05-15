@@ -229,6 +229,8 @@ def listenBiliMsg():
                             printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                         if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                             sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
+        except requests.exceptions.ReadTimeout:
+            printlog("WARNING", "Connection timed out while processing bilibili PMs.")
         except KeyError: # even if code is 0, bilibili could still return a malformed response
             printlog("DEBUG", str(response))
         except Exception:
@@ -250,13 +252,15 @@ def listenTelegramUpdate():
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
-            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 15, "allowed_updates": ["message", "inline_query"]}, timeout=30).json()
+            response = s.get(url, params = {"offset": offset, "limit": 100, "timeout": 7, "allowed_updates": ["message", "inline_query"]}, timeout=14).json()
             if not response["ok"]:
                 printlog("ERROR", "Failed to retrive Telegram updates. API says " + response["description"]) 
             else:
                 for update in response["result"]:
                     offset = update["update_id"] + 1
                     Thread(target=parseTelegramUpdate, args=[update, bot_username]).start()
+        except requests.exceptions.ReadTimeout:
+            printlog("WARNING", "Connection timed out while fetching Telegram updates.")
         except Exception:
             printlog("ERROR", "An unexpected error occurred while fetching Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
