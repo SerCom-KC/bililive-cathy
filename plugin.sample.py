@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import pytz
 import re
 
+tvguide_list = []
+
 def isAdmin(source):
     if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg"):
         if str(source["uid"]) == getConfig('host', 'uid'):
@@ -268,6 +270,29 @@ def getUSEastTime(format='', yesterday=False, tomorrow=False):
         return time_return.strftime(format)
     return time_return
 
+def getTVGuide(source=None, channel=None):
+    global tvguide_list
+    needs_update = False
+    if tvguide_list != []:
+        for channel in tvguide_list:
+            if int(time.time()) > int(channel["ProgramSchedules"][0]["EndTime"]) # Does any program presented in the list has finished airing?
+                needs_update = True
+                break
+    else: # Or the list is empty?
+        needs_update = True
+    if needs_update:
+        if source: # Send a busy status if this request is fired by human
+            from main import sendBusy
+            sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
+        url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/" + str(14*24*60)
+        tvguide_list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
+    if channel == None:
+        return tvguide_list
+    for channel in tvguide_list:
+        if channel["Channel"]["Name"] == channel:
+            return [channel]
+    return []
+
 def getNextShowing(showId):
     url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
     params = {
@@ -430,8 +455,7 @@ def nowOnAir(source):
                 result.append(now_last_query['episodeName'])
     else:
         try:
-            url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/1"
-            list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=3).json()
+            list = getTVGuide(source=source, channel="TOON")
             for channel in list:
                 if channel["Channel"]["Name"] == "TOON":
                     program = channel["ProgramSchedules"][0]
@@ -456,11 +480,13 @@ def nowOnAir(source):
                         "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
                         "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                     }]
-                    break
+                    sendReply(source, result, "telegram-inlinequeryresult" if source["from"] == "telegram-inlinequery" else "text")
+                    return
         except Exception:
-            sendReply(source, ['Cathy也不知道的喵~'])
-            return
-    sendReply(source, result, "telegram-inlinequeryresult" if source["from"] == "telegram-inlinequery" else "text")
+            pass
+        sendReply(source, ['Cathy也不知道的喵~'])
+        return
+    
 
 def nextOnAir(source, text):
     from main import sendReply
@@ -508,14 +534,10 @@ def nextOnAir(source, text):
         result = []
         skip_first = True
         try:
-            if text.replace(' ','') == '#next':
-                url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/600"
-            else:
-                if show_name == 'ERROR':
-                    sendReply(source, ['你输入的命令好像有误的喵~'])
-                    return
-                url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/20160"
-            list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
+            if text.replace(' ','') != '#next' and show_name == 'ERROR':
+                sendReply(source, ['你输入的命令好像有误的喵~'])
+                return
+            list = getTVGuide(source=source, channel="TOON")
             for channel in list:
                 if channel["Channel"]["Name"] == "TOON":
                     for program in channel["ProgramSchedules"]:
@@ -573,8 +595,7 @@ def newOnAir(source, text):
             return
     sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
     try:
-        url = "https://mobilelistings.tvguide.com/Listingsweb/ws/rest/schedules/80001/start/" + str(int(time.time())) + "/duration/" + str(14*24*60)
-        list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
+        list = getTVGuide(source=source, channel="TOON")
         if source["from"] == "telegram-inlinequery":
             results = []
         for channel in list:
