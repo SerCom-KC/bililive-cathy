@@ -187,6 +187,7 @@ def listenBiliMsg():
         printlog("ERROR", "Failed to initialize bilibili private message. API says " + response["msg"])
         raise SystemExit
     seqno = response["data"]["latest_seqno"] # we can't use ack_seqno at the moment, because that value can only be updated by mobile app via (maybe?) websocket
+    timeout_count = 0
     while True:
         try:
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
@@ -229,8 +230,11 @@ def listenBiliMsg():
                             printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                         if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                             sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
+                timeout_count = 0
         except requests.exceptions.ReadTimeout:
-            printlog("WARNING", "Connection timed out while processing bilibili PMs.")
+            timeout_count += 1
+            if timeout_count >=3:
+                printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while processing bilibili PMs.")
         except KeyError: # even if code is 0, bilibili could still return a malformed response
             printlog("DEBUG", str(response))
         except Exception:
@@ -249,6 +253,7 @@ def listenTelegramUpdate():
         return
     elif response["result"] != []:
         offset = response["result"][0]["update_id"] + 1
+    timeout_count = 0
     while True:
         try:
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getUpdates"
@@ -259,8 +264,11 @@ def listenTelegramUpdate():
                 for update in response["result"]:
                     offset = update["update_id"] + 1
                     Thread(target=parseTelegramUpdate, args=[update, bot_username]).start()
+            timeout_count = 0
         except requests.exceptions.ReadTimeout:
-            printlog("WARNING", "Connection timed out while fetching Telegram updates.")
+            timeout_count += 1
+            if timeout_count >= 3:
+                printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while fetching Telegram updates.")
         except Exception:
             printlog("ERROR", "An unexpected error occurred while fetching Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
