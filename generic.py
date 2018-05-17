@@ -10,7 +10,7 @@ import atexit
 TELEGRAM_API = "https://api.telegram.org"
 
 def printlog(log_type, message):
-    log_message = '[' + str(int(time.time())) + '][' + log_type + '] ' + message
+    log_message = '[' + str(int(time.time())) + '] [' + log_type + '] ' + message
     print(log_message)
     with open(sys.path[0] + '/cathy.log', 'a', encoding='utf-8') as logfile:
         logfile.write(log_message + '\n')
