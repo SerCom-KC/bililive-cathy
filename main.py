@@ -315,7 +315,6 @@ def onexit():
     printlog("INFO", "Cathy is off.")
 
 def main():
-    global start_time
     for retries in range(3): # make sure initStream will run even if unexpected error occurs
         try:
             checkConfig(True)
@@ -327,9 +326,9 @@ def main():
         if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
             plugin.initStream(sys.argv[2])
             raise SystemExit
+        setConfig('extras', 'start_time', int(time.time()))
         printlog('INFO', 'Cathy is on!')
         atexit.register(onexit)
-        start_time = int(time.time())
         from biliws import listenDanmaku
         Thread(target=listenDanmaku).start()
         if getConfig('assist', 'pm') == "1":
