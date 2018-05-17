@@ -379,7 +379,7 @@ def checkSchedule(allshows, index, prev_show=''):
     return False
 
 def getSchedule(source=None, channel='undefined'):
-    from main import sendReply, sendBusy
+    from main import sendBusy
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
     if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
