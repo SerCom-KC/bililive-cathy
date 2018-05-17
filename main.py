@@ -195,14 +195,14 @@ def listenBiliMsg():
             if response["code"] != 0:
                 if response["msg"] == "timeout":
                     continue
-                elif response["code"] == -6: # this code usually comes with an empty error message
-                    printlog("DEBUG", str(response))
+                elif response["code"] == -6: # Server mistakenly thinks we are unauthorized
                     continue
                 else:
                     printlog("ERROR", "Failed to receive bilibili private message updates. API says " + response["msg"])
                     printlog("ERROR", "Disabling bilibili private message now.")
                     return False
             if response["data"]["latest_seqno"] != seqno:
+                debug_response = response
                 has_more = True
                 while has_more:
                     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
@@ -236,7 +236,8 @@ def listenBiliMsg():
             if timeout_count >=3:
                 printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while processing bilibili PMs.")
         except KeyError: # even if code is 0, bilibili could still return a malformed response
-            printlog("DEBUG", str(response))
+            printlog("DEBUG-1", str(debug_response))
+            printlog("DEBUG-2", str(response))
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
