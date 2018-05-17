@@ -567,7 +567,7 @@ def nextOnAir(source, text):
                             "description": program["Title"] + ' - ' + fixTime(program["StartTime"]) if text.replace(' ','') == '#next' else EpisodeNo + '- ' + fixTime(program["StartTime"]),
                             "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                         })
-                        if source["from"] == "telegram-inlinequery" and len(result) >= 5:
+                        if source["from"] == "telegram-inlinequery" and len(result) >= 50:
                             sendReply(source, result, "telegram-inlinequeryresult")
                             return
                     break
@@ -648,7 +648,7 @@ def newOnAir(source, text):
                                     "description": EpisodeNo + '- ' + fixTime(program["StartTime"]),
                                     "thumb_url": getThumbnailByShow(show_name)
                                 })
-                        if source["from"] == "telegram-inlinequery" and len(results) >= 5:
+                        if source["from"] == "telegram-inlinequery" and len(results) >= 50:
                             sendReply(source, results, "telegram-inlinequeryresult")
                             return
                 break
