@@ -275,7 +275,7 @@ def getTVGuide(source=None, channel=None):
     needs_update = False
     if tvguide_list != []:
         for channel in tvguide_list:
-            if int(time.time()) > int(channel["ProgramSchedules"][0]["EndTime"]) # Does any program presented in the list has finished airing?
+            if int(time.time()) > int(channel["ProgramSchedules"][0]["EndTime"]): # Does any program presented in the list has finished airing?
                 needs_update = True
                 break
     else: # Or the list is empty?
