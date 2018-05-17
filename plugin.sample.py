@@ -7,10 +7,24 @@ from datetime import datetime, timedelta
 import pytz
 import re
 
+def isAdmin(source):
+    if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg"):
+        if str(source["uid"]) == getConfig('host', 'uid'):
+            return True
+        else:
+            return False
+    elif (source["from"] == "telegram-private" or source["from"] == "telegram-inlinequery"):
+        for id in getConfig('telegram', 'admins').split('|'):
+            if source["user"]["id"] == int(id):
+                return True
+        return False
+    else:
+        return False
+
 def commandParse(source, text):
     from main import sendReply
     if text == '#status':
-        if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg") and str(source["uid"]) == getConfig('host', 'uid'):
+        if isAdmin(source):
             sendReply(source, ['Cathy在的喵~'])
         else:
             return False
