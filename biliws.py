@@ -18,7 +18,7 @@ def danmakuParse(message):
         from plugin import commandParse
         commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1])
     if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
-        printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+        printlog("INFO", "Looks like the live switch is OFF.")
         from main import startLive, restartStream
         startLive()
         restartStream()
@@ -32,7 +32,7 @@ def on_message(ws, data):
         printlog("INFO", "Successfully connected with danmaku websocket server.")
         from main import isLiving, startLive, restartStream
         if not isLiving():
-            printlog("INFO", "Looks like the live switch is OFF. The time now is " + time.ctime())
+            printlog("INFO", "Looks like the live switch is OFF.")
             startLive()
             restartStream()
         return

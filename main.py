@@ -171,7 +171,7 @@ def startLive():
         printlog("WARNING", "Looks like the switch is on already.")
         return -1
     else:
-        printlog("INFO", "Live switch is now ON. The time now is " + time.ctime())
+        printlog("INFO", "Live switch is now ON.")
         #addr = response["data"]["rtmp"]["addr"]
         #code = response["data"]["rtmp"]["code"]
         #new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
