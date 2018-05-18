@@ -27,7 +27,7 @@ def commandParse(source, text):
     from main import sendReply
     if text == '#status':
         if isAdmin(source):
-            sendReply(source, ['Cathy运行时间：' + str(int(time.time()) - int(getConfig('extras', 'start_time'))) + ' 秒'])
+            sendReply(source, ['Cathy运行时间：' + str(timedelta(int(time.time()) - int(getConfig('extras', 'start_time'))))])
         else:
             return False
     elif text == '#now':
