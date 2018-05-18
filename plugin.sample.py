@@ -475,17 +475,23 @@ def nowOnAir(source):
                         EpisodeNo = '未知集数 '
                     message_text = '<b>' + program["Title"] + ' '
                     message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
-                    message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>当前正在' + channel["Channel"]["Name"] + '放送中，' + fixTime(program["StartTime"]) + '-' + fixTime(program["EndTime"]) + '，' + program["Rating"].replace('@', '-') + '</i>\n'
+                    if program["EpisodeTitle"] != '':
+                        message_text += '- ' + program["EpisodeTitle"]
+                    message_text += '</b>\n<i>当前正在' + channel["Channel"]["Name"] + '放送中，' + fixTime(program["StartTime"]) + '-' + fixTime(program["EndTime"]) + '，' + program["Rating"].replace('@', '-') + '</i>\n'
                     message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
+                    if program["EpisodeTitle"] != '':
+                        description = program["Title"] + ' - ' + fixTime(program["StartTime"])
+                    else:
+                        description = fixTime(program["StartTime"])
                     result = [{
                         "type": "article",
                         "id": str(int(source["id"]) + int(time.time())),
-                        "title": program["EpisodeTitle"],
+                        "title": program["EpisodeTitle"] if program["EpisodeTitle"] != '' else program["Title"],
                         "input_message_content": {
                             "message_text": message_text,
                             "parse_mode": 'HTML'
                         },
-                        "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
+                        "description": description,
                         "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                     }]
                     sendReply(source, result, "telegram-inlinequeryresult")
@@ -562,17 +568,26 @@ def nextOnAir(source, text):
                             EpisodeNo = '未知集数 '
                         message_text = '<b>' + program["Title"] + ' '
                         message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
-                        message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '放送，' + program["Rating"].replace('@', '-') + '</i>\n'
+                        if program["EpisodeTitle"] != '':
+                            message_text += '- ' + program["EpisodeTitle"]
+                        message_text += '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '放送，' + program["Rating"].replace('@', '-') + '</i>\n'
                         message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
+                        if text.replace(' ','') == '#next':
+                            if program["EpisodeTitle"] != '':
+                                description = program["Title"] + ' - ' + fixTime(program["StartTime"])
+                            else:
+                                description = fixTime(program["StartTime"])
+                        else:
+                            description = EpisodeNo + '- ' + fixTime(program["StartTime"])
                         result.append({
                             "type": "article",
                             "id": str(int(source["id"]) + int(time.time()) + len(result)),
-                            "title": program["EpisodeTitle"],
+                            "title": program["EpisodeTitle"] if program["EpisodeTitle"] != '' else program["Title"],
                             "input_message_content": {
                                 "message_text": message_text,
                                 "parse_mode": 'HTML'
                             },
-                            "description": program["Title"] + ' - ' + fixTime(program["StartTime"]) if text.replace(' ','') == '#next' else EpisodeNo + '- ' + fixTime(program["StartTime"]),
+                            "description": description,
                             "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                         })
                         if source["from"] == "telegram-inlinequery" and len(result) >= 50:
@@ -623,17 +638,23 @@ def newOnAir(source, text):
                             else:
                                 message_text = '<b>' + program["Title"] + ' '
                                 message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
-                                message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
+                                if program["EpisodeTitle"] != '':
+                                    message_text += '- ' + program["EpisodeTitle"]
+                                message_text += '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
                                 message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
+                                if program["EpisodeTitle"] != '':
+                                    description = program["Title"] + ' - ' + fixTime(program["StartTime"])
+                                else:
+                                    description = fixTime(program["StartTime"])
                                 results.append({
                                     "type": "article",
                                     "id": str(int(source["id"]) + int(time.time()) + len(results)),
-                                    "title": program["EpisodeTitle"],
+                                    "title": program["EpisodeTitle"] if program["EpisodeTitle"] != '' else program["Title"],
                                     "input_message_content": {
                                         "message_text": message_text,
                                         "parse_mode": 'HTML'
                                     },
-                                    "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
+                                    "description": description,
                                     "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                                 })
                         elif text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
@@ -643,12 +664,14 @@ def newOnAir(source, text):
                             else:
                                 message_text = '<b>' + show_name + ' '
                                 message_text += EpisodeNo if EpisodeNo != '未知集数 ' else ''
-                                message_text += '- ' + program["EpisodeTitle"] + '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
+                                if program["EpisodeTitle"] != '':
+                                    message_text += '- ' + program["EpisodeTitle"]
+                                message_text += '</b>\n<i>即将于' + fixTime(program["StartTime"]) + '在' + channel["Channel"]["Name"] + '首播，' + program["Rating"].replace('@', '-') + '</i>\n'
                                 message_text += program["CopyText"] if program["CopyText"] else '暂无简介'
                                 results.append({
                                     "type": "article",
                                     "id": str(int(source["id"]) + int(time.time()) + len(results)),
-                                    "title": program["EpisodeTitle"],
+                                    "title": program["EpisodeTitle"] if program["EpisodeTitle"] != '' else program["Title"],
                                     "input_message_content": {
                                         "message_text": message_text,
                                         "parse_mode": 'HTML'
