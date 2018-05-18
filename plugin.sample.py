@@ -27,7 +27,7 @@ def commandParse(source, text):
     from main import sendReply
     if text == '#status':
         if isAdmin(source):
-            sendReply(source, ['Cathy运行时间：' + str(timedelta(int(time.time()) - int(getConfig('extras', 'start_time'))))])
+            sendReply(source, ['Cathy运行时间：' + str(timedelta(seconds=int(time.time()) - int(getConfig('extras', 'start_time'))))])
         else:
             return False
     elif text == '#now':
@@ -290,7 +290,7 @@ def getTVGuide(source=None, channel=None):
         return tvguide_list
     for tvguide_channel in tvguide_list:
         if tvguide_channel["Channel"]["Name"] == channel:
-            return [channel]
+            return [tvguide_channel]
     return []
 
 def getNextShowing(showId):
