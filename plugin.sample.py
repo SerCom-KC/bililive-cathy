@@ -99,6 +99,7 @@ def commandParse(source, text):
                                'ram - Rick and Morty',
                                'mp - Mr. Pickles',
                                'mm - Mighty Magiswords',
+                               'rc - Robot Chicken',
                                '如果你想看的特纳剧不在这个列表里的话，请联系 @SerCom_KC 追加的喵~'])
     else:
         return False
@@ -140,6 +141,8 @@ def getShow(id):
         return "Mr. Pickles"
     elif id == 'mm' or id == "423572":
         return "Mighty Magiswords"
+    elif id == 'rc' or id == "331864":
+        return "Robot Chicken"
     else:
         return "ERROR"
 
@@ -179,6 +182,8 @@ def getShowID(id):
         return "398292"
     elif id == 'mm':
         return "423572"
+    elif id == 'rc':
+        return "331864"
     elif id.isdigit():
         return id
     else:
@@ -204,7 +209,7 @@ def getThumbnailByShow(show_name):
     elif show_name == "OK K.O.! Let's Be Heroes":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i195/okko_showpicker_150x150.png"
     elif show_name == "Final Space":
-        return ""
+        return "https://pbs.twimg.com/profile_images/993982255134662657/8rlaqgWN.jpg"
     elif show_name == "Apple & Onion":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i248/ao_showpicker_150x150.jpg"
     elif show_name == "Steven Universe":
@@ -212,13 +217,15 @@ def getThumbnailByShow(show_name):
     elif show_name == "The Powerpuff Girls":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i125/ppg_showpicker_bubbles_150x150.png"
     elif show_name == "FLCL":
-        return ""
+        return "https://pbs.twimg.com/profile_images/976262121347428352/sG8Va0HZ.jpg"
     elif show_name == "Rick and Morty":
-        return ""
+        return "https://pbs.twimg.com/profile_images/897250392022540288/W1T-QjML.jpg"
     elif show_name == "Mr. Pickles":
         return ""
     elif show_name == "Mighty Magiswords":
         return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i97/magiswords_showpicker_150x150.jpg"
+    elif show_name == "Robot Chicken":
+        return ""
     else:
         return ""
 
