@@ -274,8 +274,8 @@ def getTVGuide(source=None, channel=None):
     global tvguide_list
     needs_update = False
     if tvguide_list != []:
-        for channel in tvguide_list:
-            if int(time.time()) > int(channel["ProgramSchedules"][0]["EndTime"]): # Does any program presented in the list has finished airing?
+        for tvguide_channel in tvguide_list:
+            if int(time.time()) > int(tvguide_channel["ProgramSchedules"][0]["EndTime"]): # Does any program presented in the list has finished airing?
                 needs_update = True
                 break
     else: # Or the list is empty?
@@ -589,6 +589,7 @@ def nextOnAir(source, text):
 
 def newOnAir(source, text):
     from main import sendReply
+    show_name = ""
     if text.replace(' ','') != '#new':
         show_name = getShow(text.replace('#new ', ''))
         if show_name == 'ERROR':
@@ -628,7 +629,7 @@ def newOnAir(source, text):
                                     "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
                                     "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                                 })
-                        if text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
+                        elif text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
                             if source["from"] != "telegram-inlinequery":
                                 sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                                 return
