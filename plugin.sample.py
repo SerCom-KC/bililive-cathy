@@ -288,8 +288,8 @@ def getTVGuide(source=None, channel=None):
         tvguide_list = requests.get(url, params = {"channelsourceids": "3460|*,410|*,427|*", "formattype": "json"}, timeout=10).json()
     if channel == None:
         return tvguide_list
-    for channel in tvguide_list:
-        if channel["Channel"]["Name"] == channel:
+    for tvguide_channel in tvguide_list:
+        if tvguide_channel["Channel"]["Name"] == channel:
             return [channel]
     return []
 
@@ -453,10 +453,11 @@ def nowOnAir(source):
             if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
                 result.append('这集的标题是：')
                 result.append(now_last_query['episodeName'])
+        sendReply(source, result)
     else:
         try:
-            list = getTVGuide(source=source, channel="TOON")
-            for channel in list:
+            schedule = getTVGuide(source=source, channel="TOON")
+            for channel in schedule:
                 if channel["Channel"]["Name"] == "TOON":
                     program = channel["ProgramSchedules"][0]
                     if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
@@ -480,7 +481,7 @@ def nowOnAir(source):
                         "description": program["Title"] + ' - ' + fixTime(program["StartTime"]),
                         "thumb_url": getThumbnailByShow(fixShowName(program["Title"]))
                     }]
-                    sendReply(source, result, "telegram-inlinequeryresult" if source["from"] == "telegram-inlinequery" else "text")
+                    sendReply(source, result, "telegram-inlinequeryresult")
                     return
         except Exception:
             pass
@@ -537,8 +538,8 @@ def nextOnAir(source, text):
             if text.replace(' ','') != '#next' and show_name == 'ERROR':
                 sendReply(source, ['你输入的命令好像有误的喵~'])
                 return
-            list = getTVGuide(source=source, channel="TOON")
-            for channel in list:
+            schedule = getTVGuide(source=source, channel="TOON")
+            for channel in schedule:
                 if channel["Channel"]["Name"] == "TOON":
                     for program in channel["ProgramSchedules"]:
                         if skip_first:
@@ -587,18 +588,17 @@ def nextOnAir(source, text):
         sendReply(source, result, "telegram-inlinequeryresult")
 
 def newOnAir(source, text):
-    from main import sendReply, sendBusy
+    from main import sendReply
     if text.replace(' ','') != '#new':
         show_name = getShow(text.replace('#new ', ''))
         if show_name == 'ERROR':
             sendReply(source, ['你输入的命令好像有误的喵~'])
             return
-    sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
     try:
-        list = getTVGuide(source=source, channel="TOON")
+        schedule = getTVGuide(source=source, channel="TOON")
         if source["from"] == "telegram-inlinequery":
             results = []
-        for channel in list:
+        for channel in schedule:
             if channel["Channel"]["Name"] == "TOON":
                 for program in channel["ProgramSchedules"]:
                     if 4 == (4 & program["AiringAttrib"]):
