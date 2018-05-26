@@ -116,8 +116,8 @@ def getShow(id):
     id = id.lower()
     if not id.isdigit():
         for show in shows_shortcode:
-        if id == show["shortcode"]:
-            id = show["showId"]
+            if id == show["shortcode"]:
+                id = show["showId"]
     if id.isdigit():
         url = "https://raw.githubusercontent.com/SerCom-KC/cartoon-network-schedule/master/show-list?"
         shows = requests.get(url, timeout=3).json()
@@ -136,6 +136,8 @@ def getShowID(id):
     return "ERROR"
 
 def getThumbnailByShow(show_name):
+    if show_name == "Dragon Ball Z Kai: The Final Chapters":
+        show_name == "Dragon Ball Z Kai"
     url = "https://raw.githubusercontent.com/SerCom-KC/cartoon-network-schedule/master/show-list?"
     shows = requests.get(url, timeout=3).json()
     for show in shows:
