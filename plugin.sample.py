@@ -9,6 +9,28 @@ import re
 
 tvguide_list = []
 
+shows_shortcode = [
+    {"showId": "376453", "shortcode": "tawog"},
+    {"showId": "403152", "shortcode": "cl"},
+    {"showId": "393474", "shortcode": "ttg"},
+    {"showId": "326561", "shortcode": "tt"},
+    {"showId": "442472", "shortcode": "uni"},
+    {"showId": "368594", "shortcode": "at"},
+    {"showId": "438472", "shortcode": "ben10"},
+    {"showId": "419032", "shortcode": "wbb"},
+    {"showId": "440832", "shortcode": "okko"},
+    {"showId": "444812", "shortcode": "fs"},
+    {"showId": "444772", "shortcode": "aao"},
+    {"showId": "399692", "shortcode": "su"},
+    {"showId": "425772", "shortcode": "ppg2016"},
+    {"showId": "447432", "shortcode": "flcl"},
+    {"showId": "401312", "shortcode": "ram"},
+    {"showId": "398292", "shortcode": "mp"},
+    {"showId": "423572", "shortcode": "mm"},
+    {"showId": "331864", "shortcode": "rc"},
+    {"showId": "447434", "shortcode": "flclpro"}
+]
+
 def isAdmin(source):
     if (source["from"] == "bili-danmaku" or source["from"] == "bili-msg"):
         if str(source["uid"]) == getConfig('host', 'uid'):
@@ -81,153 +103,45 @@ def commandParse(source, text):
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
         else:
-            sendReply(source, ['当前支持的缩写列表：',
-                               'tawog - The Amazing World of Gumball',
-                               'cl - Clarence',
-                               'ttg - Teen Titans Go!',
-                               'tt - Teen Titans',
-                               'uni - Unikitty!',
-                               'at - Adventure Time',
-                               'ben10 - Ben 10',
-                               'wbb - We Bare Bears',
-                               'okko - OK K.O.! Let\'s Be Heroes',
-                               'fs - Final Space',
-                               'aao - Apple & Onion',
-                               'su - Steven Universe',
-                               'ppg2016 - The Powerpuff Girls (2016)',
-                               'flcl - FLCL',
-                               'ram - Rick and Morty',
-                               'mp - Mr. Pickles',
-                               'mm - Mighty Magiswords',
-                               'rc - Robot Chicken',
-                               '如果你想看的特纳剧不在这个列表里的话，请联系 @SerCom_KC 追加的喵~'])
+            reply = ['当前支持的缩写列表：']
+            for show in shows_shortcode:
+                reply.append(show["shortcode"] + ' - ' + getShow(show["shortcode"]))
+            reply.append('如果你想看的特纳剧不在这个列表里的话，请联系 @SerCom_KC 追加的喵~')
+            sendReply(source, reply)
     else:
         return False
     return True
 
 def getShow(id):
     id = id.lower()
-    if id == 'tawog' or id == "376453":
-        return "The Amazing World of Gumball"
-    elif id == 'cl' or id == "403152":
-        return "Clarence"
-    elif id == 'ttg' or id == "393474":
-        return "Teen Titans Go!"
-    elif id == 'tt' or id == "326561":
-        return "Teen Titans"
-    elif id == 'uni' or id == "442472":
-        return "Unikitty!"
-    elif id == 'at' or id == "368594":
-        return "Adventure Time"
-    elif id == 'ben10' or id == "438472":
-        return "Ben 10"
-    elif id == 'wbb' or id == "419032":
-        return "We Bare Bears"
-    elif id == 'okko' or id == "440832":
-        return "OK K.O.! Let's Be Heroes"
-    elif id == 'fs' or id == "444812":
-        return "Final Space"
-    elif id == 'aao' or id == "444772":
-        return "Apple & Onion"
-    elif id == 'su' or id == "399692":
-        return "Steven Universe"
-    elif id == 'ppg2016' or id == "425772":
-        return "The Powerpuff Girls"
-    elif id == 'flcl' or id == "447432":
-        return "FLCL"
-    elif id == 'ram' or id == "401312":
-        return "Rick and Morty"
-    elif id == 'mp' or id == "398292":
-        return "Mr. Pickles"
-    elif id == 'mm' or id == "423572":
-        return "Mighty Magiswords"
-    elif id == 'rc' or id == "331864":
-        return "Robot Chicken"
-    else:
-        return "ERROR"
+    if not id.isdigit():
+        for show in shows_shortcode:
+        if id == show["shortcode"]:
+            id = show["showId"]
+    if id.isdigit():
+        url = "https://raw.githubusercontent.com/SerCom-KC/cartoon-network-schedule/master/show-list?"
+        shows = requests.get(url, timeout=3).json()
+        for show in shows:
+            if show["showId"] == id:
+                return show["title"]
+    return "ERROR"
 
 def getShowID(id):
     id = id.lower()
-    if id == 'tawog':
-        return "376453"
-    elif id == 'cl':
-        return "403152"
-    elif id == 'ttg':
-        return "393474"
-    elif id == 'tt':
-        return "326561"
-    elif id == 'uni':
-        return "442472"
-    elif id == 'at':
-        return "368594"
-    elif id == 'ben10':
-        return "438472"
-    elif id == 'wbb':
-        return "419032"
-    elif id == 'okko':
-        return "440832"
-    elif id == 'fs':
-        return "444812"
-    elif id == 'aao':
-        return "444772"
-    elif id == 'su':
-        return "399692"
-    elif id == 'ppg2016':
-        return "425772"
-    elif id == 'flcl':
-        return "447432"
-    elif id == 'ram':
-        return "401312"
-    elif id == 'mp':
-        return "398292"
-    elif id == 'mm':
-        return "423572"
-    elif id == 'rc':
-        return "331864"
-    elif id.isdigit():
+    if id.isdigit():
         return id
-    else:
-        return "ERROR"
+    for show in shows_shortcode:
+        if id == show["shortcode"]:
+            return show["showId"]
+    return "ERROR"
 
 def getThumbnailByShow(show_name):
-    if show_name == "The Amazing World of Gumball":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/Gumball_150x150.jpg"
-    elif show_name == "Clarence":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i78/clarence_150x150.jpg"
-    elif show_name == "Teen Titans Go!":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i74/ttg_150x150.jpg"
-    elif show_name == "Teen Titans":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/TeenTitans_150x150.jpg"
-    elif show_name == "Unikitty!":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i221/unikitty_showpickericon_150x150.png"
-    elif show_name == "Adventure Time":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i69/AT_150x150.jpg"
-    elif show_name == "Ben 10":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i182/ben17_150x150.jpg"
-    elif show_name == "We Bare Bears":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i101/wbb_150x150.jpg"
-    elif show_name == "OK K.O.! Let's Be Heroes":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i195/okko_showpicker_150x150.png"
-    elif show_name == "Final Space":
-        return "https://pbs.twimg.com/profile_images/993982255134662657/8rlaqgWN.jpg"
-    elif show_name == "Apple & Onion":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i248/ao_showpicker_150x150.jpg"
-    elif show_name == "Steven Universe":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i81/su_showpicker_150x150_v6.jpg"
-    elif show_name == "The Powerpuff Girls":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i125/ppg_showpicker_bubbles_150x150.png"
-    elif show_name == "FLCL":
-        return "https://pbs.twimg.com/profile_images/976262121347428352/sG8Va0HZ.jpg"
-    elif show_name == "Rick and Morty":
-        return "https://pbs.twimg.com/profile_images/897250392022540288/W1T-QjML.jpg"
-    elif show_name == "Mr. Pickles":
-        return ""
-    elif show_name == "Mighty Magiswords":
-        return "https://i.cdn.turner.com/v5cache/CARTOON/site/Images/i97/magiswords_showpicker_150x150.jpg"
-    elif show_name == "Robot Chicken":
-        return ""
-    else:
-        return ""
+    url = "https://raw.githubusercontent.com/SerCom-KC/cartoon-network-schedule/master/show-list?"
+    shows = requests.get(url, timeout=3).json()
+    for show in shows:
+        if show["title"] == show_name:
+            return show["thumbnail"]
+    return ""
 
 def getChannel():
     return getConfig('extras', 'now_channel')
@@ -334,13 +248,13 @@ def checkSchedule(allshows, index, prev_show=''):
     show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
     if int(time.time()) < convertTime(show_time):
         # update next_last_query
-        if allshows[index].xpath('@title')[0] == "Cartoon Network":
+        if allshows[index].xpath('@urlName')[0] == "Cartoon Network":
             title_fixed = getShow(allshows[index].xpath('@showId')[0])
             if title_fixed == 'ERROR': # ID not in our database yet
                 title_fixed = "（欸，是叫什么来着喵？）"
             setConfig('extras', 'next_title', title_fixed)
         else:
-            setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@title')[0]))
+            setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@urlName')[0]))
         # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
         params = {
@@ -361,13 +275,13 @@ def checkSchedule(allshows, index, prev_show=''):
             show = allshows[index-1]
         date_str = show.xpath('@date')[0] + ' ' + show.xpath('@military')[0]
         show_time = pytz.timezone('US/Eastern').localize(datetime.strptime(date_str, '%m/%d/%Y %H:%M'))
-        if show.xpath('@title')[0] == "Cartoon Network":
+        if show.xpath('@urlName')[0] == "Cartoon Network":
             title_fixed = getShow(show.xpath('@showId')[0])
             if title_fixed == 'ERROR': # ID not in our database yet
                 title_fixed = "（欸，是叫什么来着喵？）"
             setConfig('extras', 'now_title', title_fixed)
         else:
-            setConfig('extras', 'now_title', fixShowName(show.xpath('@title')[0]))
+            setConfig('extras', 'now_title', fixShowName(show.xpath('@urlName')[0]))
         # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
         url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
         params = {
@@ -542,9 +456,6 @@ def nextOnAir(source, text):
                 sendReply(source, result)
             return
     else:
-        if text.replace('#next ', '').isdigit():
-            sendReply(source, ['呜喵~inline模式不支持数字ID的喵~', '请使用缩写的喵~'])
-            return
         result = []
         skip_first = True
         try:
@@ -606,7 +517,9 @@ def nextOnAir(source, text):
                     "message_text": "两周内没有发现TV放送的喵~"
                 },
                 "thumb_url": getThumbnailByShow(show_name)
-        }]
+            }]
+            if text.replace('#next ', '').isdigit():
+                result[0]["description"] = "也许是你输入的数字ID暂时与第三方数据对不上的喵~"
         sendReply(source, result, "telegram-inlinequeryresult")
 
 def newOnAir(source, text):
