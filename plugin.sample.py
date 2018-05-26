@@ -137,7 +137,7 @@ def getShowID(id):
 
 def getThumbnailByShow(show_name):
     if show_name == "Dragon Ball Z Kai: The Final Chapters":
-        show_name == "Dragon Ball Z Kai"
+        show_name = "Dragon Ball Z Kai"
     url = "https://raw.githubusercontent.com/SerCom-KC/cartoon-network-schedule/master/show-list?"
     shows = requests.get(url, timeout=3).json()
     for show in shows:
