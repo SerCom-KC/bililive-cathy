@@ -150,8 +150,7 @@ def isLiving():
         return True
 
 
-def startLive(argv=None):
-    printlog("INFO", "Attempting to turn the switch on...")
+def startLive(argv=None, force=False):
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     data = {
         'access_key': getConfig('host', 'accesskey'),
@@ -164,17 +163,18 @@ def startLive(argv=None):
         printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
         raise SystemExit
     elif response["data"]["change"] == 0:
-        printlog("WARNING", "Looks like the switch is on already.")
-        return -1
+        printlog("WARNING", "Looks like the live switch is on already.")
+        if not force:
+            return -1
     else:
         printlog("INFO", "Live switch is now ON.")
-        addr = response["data"]["rtmp"]["addr"]
-        code = response["data"]["rtmp"]["code"]
-        new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
-        printlog("INFO", "Attempting to restart live stream...")
-        plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
-        printlog("INFO", "The live stream should be back online now.")
-        return 0
+    addr = response["data"]["rtmp"]["addr"]
+    code = response["data"]["rtmp"]["code"]
+    new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+    printlog("INFO", "Attempting to restart live stream...")
+    plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
+    printlog("INFO", "The live stream should be back online now.")
+    return 0
 
 
 def listenBiliMsg():
@@ -328,7 +328,7 @@ def checkStream():
     resp = requests.get(url, params=params).json()
     stream = resp["data"]["durl"][0]["url"]
     if requests.get(stream).status_code == 404:
-        startLive()
+        startLive(force=True)
 
 def onexit():
     printlog("INFO", "Cathy is off.")
@@ -343,7 +343,7 @@ def main():
             printlog("TRACEBACK", "\n" + traceback.format_exc())
     try:
         if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
-            startLive(sys.argv[2])
+            startLive(sys.argv[2], force=True)
             raise SystemExit
         setConfig('extras', 'start_time', int(time.time()))
         printlog('INFO', 'Cathy is on!')
