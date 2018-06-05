@@ -150,7 +150,7 @@ def isLiving():
         return True
 
 
-def startLive():
+def startLive(argv=None):
     printlog("INFO", "Attempting to turn the switch on...")
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     data = {
@@ -172,9 +172,10 @@ def startLive():
         code = response["data"]["rtmp"]["code"]
         new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
         printlog("INFO", "Attempting to restart live stream...")
-        plugin.initStream(plugin.getChannel(), notice=False, rtmp_push_address=new_link)
+        plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
         printlog("INFO", "The live stream should be back online now.")
         return 0
+
 
 def listenBiliMsg():
     from plugin import commandParse
@@ -328,7 +329,7 @@ def main():
             printlog("TRACEBACK", "\n" + traceback.format_exc())
     try:
         if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
-            plugin.initStream(sys.argv[2])
+            startLive(sys.argv[2])
             raise SystemExit
         setConfig('extras', 'start_time', int(time.time()))
         printlog('INFO', 'Cathy is on!')
