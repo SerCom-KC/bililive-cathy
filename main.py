@@ -149,10 +149,6 @@ def isLiving():
         printlog("INFO", "Live stream switch is ON.")
         return True
 
-def restartStream():
-    printlog("INFO", "Attempting to restart live stream...")
-    plugin.initStream(plugin.getChannel(), False)
-    printlog("INFO", "The live stream should be back online now.")
 
 def startLive():
     printlog("INFO", "Attempting to turn the switch on...")
@@ -172,9 +168,12 @@ def startLive():
         return -1
     else:
         printlog("INFO", "Live switch is now ON.")
-        #addr = response["data"]["rtmp"]["addr"]
-        #code = response["data"]["rtmp"]["code"]
-        #new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+        addr = response["data"]["rtmp"]["addr"]
+        code = response["data"]["rtmp"]["code"]
+        new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+        printlog("INFO", "Attempting to restart live stream...")
+        plugin.initStream(plugin.getChannel(), notice=False, rtmp_push_address=new_link)
+        printlog("INFO", "The live stream should be back online now.")
         return 0
 
 def listenBiliMsg():
