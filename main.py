@@ -325,9 +325,9 @@ def checkStream():
         "quality": "4",
         "platform": "web"
     }
-    resp = requests.get(url, params=params).json()
+    resp = requests.get(url, params=params, timeout=3).json()
     stream = resp["data"]["durl"][0]["url"]
-    if requests.get(stream).status_code == 404:
+    if requests.get(stream, timeout=10).status_code == 404:
         startLive(force=True)
 
 def onexit():
