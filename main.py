@@ -262,6 +262,7 @@ def listenTelegramUpdate():
                     offset = update["update_id"] + 1
                     Thread(target=parseTelegramUpdate, args=[update, bot_username]).start()
             timeout_count = 0
+            time.sleep(300)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
             if timeout_count >= 3:
@@ -316,6 +317,19 @@ def checkConfig(firstrun=False):
                 printlog("ERROR", "Your Telegram bot token seems invalid. Please check your config.ini")
                 raise SystemExit
 
+
+def checkStream():
+    url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
+    params = {
+        "cid": getConfig("host", "roomid"),
+        "quality": "4",
+        "platform": "web"
+    }
+    resp = requests.get(url, params=params).json()
+    stream = resp["data"]["durl"][0]["url"]
+    if requests.get(stream).status_code == 404:
+        startLive()
+
 def onexit():
     printlog("INFO", "Cathy is off.")
 
@@ -344,7 +358,8 @@ def main():
             try:
                 plugin.getSchedule()
                 checkConfig()
-                time.sleep(5)
+                checkStream()
+                time.sleep(30)
             except Exception:
                 printlog("ERROR", "Unexpected error occurred.")
                 printlog("TRACEBACK", "\n" + traceback.format_exc())
