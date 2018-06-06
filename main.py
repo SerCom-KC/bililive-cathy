@@ -262,7 +262,7 @@ def listenTelegramUpdate():
                     offset = update["update_id"] + 1
                     Thread(target=parseTelegramUpdate, args=[update, bot_username]).start()
             timeout_count = 0
-            time.sleep(300)
+            time.sleep(0.3)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
             if timeout_count >= 3:
