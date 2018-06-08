@@ -330,7 +330,7 @@ def checkStream():
     global stream_url
     flag = False
     try:
-        stream_status_code = requests.get(stream_url, timeout=10).status_code
+        stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
         flag = (stream_status_code == 404)
     except Exception:
         flag = True
@@ -339,12 +339,12 @@ def checkStream():
         params = {
             "cid": getConfig("host", "roomid"),
             "quality": "4",
-            "platform": "h5",
+            "platform": "web",
             "otype": "json"
         }
         resp = requests.get(url, params=params, timeout=3).json()
         stream_url = resp["data"]["durl"][0]["url"]
-        stream_status_code = requests.get(stream_url, timeout=10).status_code
+        stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
     if stream_status_code == 404:
         startLive(force=True)
 
