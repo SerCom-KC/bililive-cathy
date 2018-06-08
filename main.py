@@ -152,8 +152,11 @@ def isLiving():
 
 def startLive(argv=None, force=False):
     global startLive_lock
-    if startLive_lock:
-        return
+    try:
+        if startLive_lock:
+            return
+    except NameError:
+        pass
     startLive_lock = True
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     data = {
@@ -325,9 +328,13 @@ def checkConfig(firstrun=False):
 
 def checkStream():
     global stream_url
-    if stream_url:
+    flag = False
+    try:
         stream_status_code = requests.get(stream_url, timeout=10).status_code
-    if not stream_url or stream_status_code == 404:
+        flag = (stream_status_code == 404)
+    except NameError:
+        flag = True
+    if flag:
         url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
         params = {
             "cid": getConfig("host", "roomid"),
@@ -337,14 +344,13 @@ def checkStream():
         resp = requests.get(url, params=params, timeout=3).json()
         stream_url = resp["data"]["durl"][0]["url"]
         stream_status_code = requests.get(stream_url, timeout=10).status_code
-    if stream_status_code:
+    if stream_status_code == 404:
         startLive(force=True)
 
 def onexit():
     printlog("INFO", "Cathy is off.")
 
 def main():
-    global last_alive
     for retries in range(3): # make sure initStream will run even if unexpected error occurs
         try:
             checkConfig(True)
