@@ -339,7 +339,8 @@ def checkStream():
         params = {
             "cid": getConfig("host", "roomid"),
             "quality": "4",
-            "platform": "web"
+            "platform": "h5",
+            "otype": "json"
         }
         resp = requests.get(url, params=params, timeout=3).json()
         stream_url = resp["data"]["durl"][0]["url"]
