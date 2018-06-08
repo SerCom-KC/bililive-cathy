@@ -332,7 +332,7 @@ def checkStream():
     try:
         stream_status_code = requests.get(stream_url, timeout=10).status_code
         flag = (stream_status_code == 404)
-    except NameError:
+    except Exception:
         flag = True
     if flag:
         url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
