@@ -151,6 +151,10 @@ def isLiving():
 
 
 def startLive(argv=None, force=False):
+    global startLive_lock
+    if startLive_lock:
+        return
+    startLive_lock = True
     url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
     data = {
         'access_key': getConfig('host', 'accesskey'),
@@ -174,6 +178,7 @@ def startLive(argv=None, force=False):
     printlog("INFO", "Attempting to restart live stream...")
     plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
     printlog("INFO", "The live stream should be back online now.")
+    startLive_lock = False
     return 0
 
 
@@ -319,21 +324,27 @@ def checkConfig(firstrun=False):
 
 
 def checkStream():
-    url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
-    params = {
-        "cid": getConfig("host", "roomid"),
-        "quality": "4",
-        "platform": "web"
-    }
-    resp = requests.get(url, params=params, timeout=3).json()
-    stream = resp["data"]["durl"][0]["url"]
-    if requests.get(stream, timeout=10).status_code == 404:
+    global stream_url
+    if stream_url:
+        stream_status_code = requests.get(stream_url, timeout=10).status_code
+    if not stream_url or stream_status_code == 404:
+        url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
+        params = {
+            "cid": getConfig("host", "roomid"),
+            "quality": "4",
+            "platform": "web"
+        }
+        resp = requests.get(url, params=params, timeout=3).json()
+        stream_url = resp["data"]["durl"][0]["url"]
+        stream_status_code = requests.get(stream_url, timeout=10).status_code
+    if stream_status_code:
         startLive(force=True)
 
 def onexit():
     printlog("INFO", "Cathy is off.")
 
 def main():
+    global last_alive
     for retries in range(3): # make sure initStream will run even if unexpected error occurs
         try:
             checkConfig(True)
@@ -359,7 +370,7 @@ def main():
                 plugin.getSchedule()
                 checkConfig()
                 checkStream()
-                time.sleep(30)
+                time.sleep(5)
             except Exception:
                 printlog("ERROR", "Unexpected error occurred.")
                 printlog("TRACEBACK", "\n" + traceback.format_exc())
