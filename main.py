@@ -240,7 +240,7 @@ def listenBiliMsg():
             timeout_count = 0
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
-            if timeout_count >=3:
+            if timeout_count >= 5:
                 printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while processing bilibili PMs.")
         except Exception:
             printlog("ERROR", "An unexpected error occurred while processing bilibili PMs.")
@@ -273,7 +273,7 @@ def listenTelegramUpdate():
             time.sleep(0.3)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
-            if timeout_count >= 3:
+            if timeout_count >= 5:
                 printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while fetching Telegram updates.")
         except Exception:
             printlog("ERROR", "An unexpected error occurred while fetching Telegram updates.")
@@ -344,7 +344,16 @@ def checkStream():
         }
         resp = requests.get(url, params=params, timeout=3).json()
         stream_url = resp["data"]["durl"][0]["url"]
-        stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
+        timeout_count = 0
+        while timeout_count < 3:
+            try:
+                stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
+                break
+            except requests.exceptions.ReadTimeout:
+                timeout_count += 1
+                continue
+        if timeout_count >= 3:
+            printlog("WARNING", "Connection timed out 3 times while checking bilibili live stream.")
     if stream_status_code == 404:
         startLive(force=True)
 
