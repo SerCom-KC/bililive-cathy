@@ -362,7 +362,7 @@ def parseMastodonUpdate(update, bot_username):
         if update["type"] == "mention" and "status" in update:
             status = update["status"]
             source = {"from": "mastodon", "account": status["account"], "visibility": status["visibility"], "id": status["id"]}
-            import lxml
+            import lxml.html
             text = lxml.html.document_fromstring(status["content"]).text_content()
             time = int(pytz.utc.localize(datetime.datetime.strptime(status["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")).timestamp())
             printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + time + ": " + text)
