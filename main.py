@@ -90,6 +90,27 @@ def answerTelegramInlineQuery(source, results):
     #printlog("INFO", "Sucessfully answered Telegram inline query from " + source["user"]["first_name"] + " (" + str(source["user"]["id"]) + ").")
     return True
 
+
+def sendMastodonStatus(source, text):
+    mastodon_base = 'https://%s' % getConfig('mastodon', 'domain')
+    url = mastodon_base + "/api/v1/statuses"
+    headers = {
+        "Authorization": 'Bearer %s' % getConfig('mastodon', 'accesstoken')
+    }
+    data = {
+        "status": text,
+        "in_reply_to_id": source["id"],
+        "visibility": source["visibility"],
+        "language": "chi"
+    }
+    response = requests.post(url, data=data, headers=headers, timeout=10).json()
+    if "error" in response:
+        printlog("ERROR", "Failed to reply Mastodon status to " + source["account"]["display_name"] + " (" + source["account"]["acct"] + "): " + text + ". API says " + response["error"])
+        return False
+    printlog("INFO", "Sucessfully sent Mastodon status to " + source["account"]["display_name"] + " (" + source["account"]["acct"] + "): " + text)
+    return True
+
+
 def sendBatchDanmaku(texts, username):
     try:
         global danmaku_lock
@@ -279,6 +300,35 @@ def listenTelegramUpdate():
             printlog("ERROR", "An unexpected error occurred while fetching Telegram updates.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
 
+
+def listenMastodonUpdate():
+    s = requests.Session()
+    mastodon_base = 'https://%s' % getConfig('mastodon', 'domain')
+    headers = {
+        "Authorization": 'Bearer %s' % getConfig('mastodon', 'accesstoken')
+    }
+    url = mastodon_base + "/api/v1/accounts/verify_credentials"
+    bot_username = s.get(url, headers=headers, timeout=3).json()["acct"]
+    url = mastodon_base + "/api/v1/notifications"
+    offset = getConfig('mastodon', 'offset')
+    timeout_count = 0
+    while True:
+        try:
+            url = mastodon_base + "/api/v1/notifications"
+            response = s.get(url, params = {"since_id": offset, "limit": 100, "exclude_types": ["follow", "favourite", "reblog"]}, headers=headers, timeout=5).json()
+            for update in response:
+                offset = update["id"] + 1
+                Thread(target=parseMastodonUpdate, args=[update, bot_username]).start()
+            timeout_count = 0
+            time.sleep(0.3)
+        except requests.exceptions.ReadTimeout:
+            timeout_count += 1
+            if timeout_count >= 5:
+                printlog("WARNING", "Connection timed out " + str(timeout_count) + " times while fetching Mastodon updates.")
+        except Exception:
+            printlog("ERROR", "An unexpected error occurred while fetching Mastodon updates.")
+            printlog("TRACEBACK", "\n" + traceback.format_exc())            
+
 def parseTelegramUpdate(update, bot_username):
     from plugin import commandParse
     try:
@@ -300,6 +350,25 @@ def parseTelegramUpdate(update, bot_username):
             if not commandParse(source, query["query"]):
                 results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "请输入以#开头的命令喵~", "input_message_content": {"message_text": "喵，Cathy不是很确定你在问什么的喵~\n你可能需要去找我的主人 @szescxz，或者输入 @" + bot_username + " #help 获取命令列表的喵~"}, "description": "输入 #help 可以获取命令列表的喵~"}]
                 sendReply(source, results, "telegram-inlinequeryresult")
+    except Exception:
+        printlog("ERROR", "An unexpected error occurred while parsing Telegram updates.")
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
+
+
+def parseMastodonUpdate(update, bot_username):
+    from plugin import commandParse
+    try:
+        if update["type"] == "mention" and "status" in update:
+            status = update["status"]
+            source = {"from": "mastodon", "account": status["account"], "visibility": status["visibility"], "id": status["id"]}
+            import lxml
+            text = lxml.html.document_fromstring(status["content"]).text_content()
+            time = int(pytz.utc.localize(datetime.datetime.strptime(status["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")).timestamp())
+            printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + time + ": " + text)
+            text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
+            text = text.replace('/', '#', 1) if text[0] == '/' else text
+            if not commandParse(source, text):
+                sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC@sckc.stream，或者发送 /help 获取命令列表的喵~"])
     except Exception:
         printlog("ERROR", "An unexpected error occurred while parsing Telegram updates.")
         printlog("TRACEBACK", "\n" + traceback.format_exc())
@@ -381,6 +450,8 @@ def main():
             Thread(target=listenBiliMsg).start()
         if getConfig('telegram', 'token') != "" and getConfig('telegram', 'pm') == "1":
             Thread(target=listenTelegramUpdate).start()
+        if getConfig('mastodon', 'domain') != "" and getConfig('mastodon', 'accesstoken') != "":
+            Thread(target=listenMastodonUpdate).start()
         while True:
             try:
                 plugin.getSchedule()

@@ -61,11 +61,13 @@ def commandParse(source, text):
     elif text.find('#next') == 0:
         nextOnAir(source, text)
         #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
-    elif text.find('字幕') != -1:
+    elif text.find('字幕') != -1 and source["from"] == "bili-danmaku":
         sendReply(source, ['需要英文字幕的话请前往备用直播间喵~'])
     elif text == '#help':
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
+        elif source["from"] == "mastodon":
+            sendReply(source, ['请直接查看置顶嘟文的喵：https://sckc.stream/@bililive_cathy_bot/100184533673968102'])
         else:
             responses = [
                 '当前支持的命令有以下这些的喵~',
@@ -102,6 +104,8 @@ def commandParse(source, text):
     elif text == '#help list':
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
+        elif source["from"] == "mastodon":
+            sendReply(source, ['因为列表可能过长，所以Cathy在Mastodon上暂时不支持这个命令喵TAT'])
         else:
             reply = ['当前支持的缩写列表：']
             for show in shows_shortcode:
@@ -416,7 +420,7 @@ def nowOnAir(source):
             pass
         sendReply(source, ['Cathy也不知道的喵~'])
         return
-    
+
 
 def nextOnAir(source, text):
     from main import sendReply
