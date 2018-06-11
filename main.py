@@ -100,7 +100,7 @@ def sendMastodonStatus(source, text):
         "Authorization": 'Bearer %s' % getConfig('mastodon', 'accesstoken')
     }
     data = {
-        "status": text,
+        "status": "%s %s" % (source["account"]["acct"], text),
         "in_reply_to_id": source["id"],
         "visibility": source["visibility"],
         "language": "chi"
