@@ -431,7 +431,8 @@ def checkStream():
         if timeout_count >= 3:
             printlog("WARNING", "Connection timed out 3 times while checking bilibili live stream.")
     if stream_status_code == 404:
-        startLive(force=True)
+        return False
+    return True
 
 def onexit():
     printlog("INFO", "Cathy is off.")
@@ -459,11 +460,18 @@ def main():
             Thread(target=listenTelegramUpdate).start()
         if getConfig('mastodon', 'domain') != "" and getConfig('mastodon', 'accesstoken') != "":
             Thread(target=listenMastodonUpdate).start()
+        streamoff_count = 0
         while True:
             try:
                 plugin.getSchedule()
                 checkConfig()
-                checkStream()
+                if not checkStream():
+                    streamoff_count += 1
+                else:
+                    streamoff_count = 0
+                if streamoff_count >= 3:
+                    startLive(force=True)
+                    streamoff_count = 0
                 time.sleep(5)
             except Exception:
                 printlog("ERROR", "Unexpected error occurred.")
