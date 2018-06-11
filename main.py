@@ -319,7 +319,7 @@ def listenMastodonUpdate():
             url = mastodon_base + "/api/v1/notifications"
             response = s.get(url, params = {"since_id": offset, "limit": 100, "exclude_types": ["follow", "favourite", "reblog"]}, headers=headers, timeout=5).json()
             if "error" in response:
-                printlog("ERROR", "Failed to retrive Mastodon updates. API says " + response["description"])
+                printlog("ERROR", "Failed to retrive Mastodon updates. API says " + response["error"])
             else:
                 for update in response:
                     offset = int(update["id"]) + 1
