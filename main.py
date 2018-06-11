@@ -310,7 +310,7 @@ def listenMastodonUpdate():
         "Authorization": 'Bearer %s' % getConfig('mastodon', 'accesstoken')
     }
     url = mastodon_base + "/api/v1/accounts/verify_credentials"
-    bot_username = s.get(url, headers=headers, timeout=3).json()["acct"]
+    bot_username = s.get(url, headers=headers, timeout=3).json()["username"]
     url = mastodon_base + "/api/v1/notifications"
     offset = int(getConfig('mastodon', 'offset'))
     timeout_count = 0
@@ -326,7 +326,7 @@ def listenMastodonUpdate():
                     Thread(target=parseMastodonUpdate, args=[update, bot_username]).start()
                 setConfig("mastodon", "offset", offset)
             timeout_count = 0
-            time.sleep(0.3)
+            time.sleep(5)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
             if timeout_count >= 5:
@@ -371,7 +371,7 @@ def parseMastodonUpdate(update, bot_username):
             text = lxml.html.document_fromstring(status["content"]).text_content()
             time = int(pytz.utc.localize(datetime.datetime.strptime(status["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")).timestamp())
             printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + str(time) + ": " + text)
-            text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
+            text = text.replace('@' + bot_username, '', 1)
             text = text.replace('/', '#', 1) if text[0] == '/' else text
             if not commandParse(source, text):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC@sckc.stream，或者发送 /help 获取命令列表的喵~"])
