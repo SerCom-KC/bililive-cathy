@@ -33,6 +33,8 @@ def sendReply(source, responses, type="text"):
         else:
             results = [{"type": "article", "id": str(int(source["id"]) + int(time.time())), "title": "在当前对话中发送结果", "input_message_content": {"message_text": '\n'.join(responses)}, "description": "查询结果将会对当前会话中的所有参与者可见的喵~"}]
         answerTelegramInlineQuery(source, results)
+    elif source["from"] == "mastodon":
+        sendMastodonStatus(source, '\n'.join(responses))
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
