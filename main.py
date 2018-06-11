@@ -372,6 +372,7 @@ def parseMastodonUpdate(update, bot_username):
             time = int(pytz.utc.localize(datetime.datetime.strptime(status["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")).timestamp())
             printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + str(time) + ": " + text)
             text = text.replace('@' + bot_username, '', 1)
+            text = text.lstrip(' ').rstrip(' ')
             text = text.replace('/', '#', 1) if text[0] == '/' else text
             if not commandParse(source, text):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC@sckc.stream，或者发送 /help 获取命令列表的喵~"])
