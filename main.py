@@ -317,7 +317,7 @@ def listenMastodonUpdate():
             url = mastodon_base + "/api/v1/notifications"
             response = s.get(url, params = {"since_id": offset, "limit": 100, "exclude_types": ["follow", "favourite", "reblog"]}, headers=headers, timeout=5).json()
             for update in response:
-                offset = update["id"] + 1
+                offset = int(update["id"]) + 1
                 Thread(target=parseMastodonUpdate, args=[update, bot_username]).start()
             setConfig("mastodon", "offset", offset)
             timeout_count = 0
