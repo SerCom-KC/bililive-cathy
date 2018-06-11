@@ -365,13 +365,13 @@ def parseMastodonUpdate(update, bot_username):
             import lxml.html
             text = lxml.html.document_fromstring(status["content"]).text_content()
             time = int(pytz.utc.localize(datetime.datetime.strptime(status["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")).timestamp())
-            printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + time + ": " + text)
+            printlog("INFO", "New Mastodon mention from " + source["account"]["display_name"] + " (" + source["account"]["acct"] + ") at " + str(time) + ": " + text)
             text = text.replace('@' + bot_username, '', 1) if re.match(r'/\w*@' + bot_username, text) else text
             text = text.replace('/', '#', 1) if text[0] == '/' else text
             if not commandParse(source, text):
                 sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC@sckc.stream，或者发送 /help 获取命令列表的喵~"])
     except Exception:
-        printlog("ERROR", "An unexpected error occurred while parsing Telegram updates.")
+        printlog("ERROR", "An unexpected error occurred while parsing Mastodon updates.")
         printlog("TRACEBACK", "\n" + traceback.format_exc())
 
 def checkConfig(firstrun=False):
