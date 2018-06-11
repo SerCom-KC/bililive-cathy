@@ -310,7 +310,7 @@ def listenMastodonUpdate():
     url = mastodon_base + "/api/v1/accounts/verify_credentials"
     bot_username = s.get(url, headers=headers, timeout=3).json()["acct"]
     url = mastodon_base + "/api/v1/notifications"
-    offset = getConfig('mastodon', 'offset')
+    offset = int(getConfig('mastodon', 'offset'))
     timeout_count = 0
     while True:
         try:
@@ -319,6 +319,7 @@ def listenMastodonUpdate():
             for update in response:
                 offset = update["id"] + 1
                 Thread(target=parseMastodonUpdate, args=[update, bot_username]).start()
+            setConfig("mastodon", "offset", offset)
             timeout_count = 0
             time.sleep(0.3)
         except requests.exceptions.ReadTimeout:
