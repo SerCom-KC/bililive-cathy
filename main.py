@@ -430,6 +430,7 @@ def checkStream():
                 continue
         if timeout_count >= 3:
             printlog("WARNING", "Connection timed out 3 times while checking bilibili live stream.")
+            return True
     if stream_status_code == 404:
         return False
     return True
