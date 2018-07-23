@@ -544,6 +544,8 @@ def newOnAir(source, text):
             if channel["Channel"]["Name"] == "TOON":
                 for program in channel["ProgramSchedules"]:
                     if 4 == (4 & program["AiringAttrib"]):
+                        if int(time.time()) > program["StartTime"]:
+                            continue
                         if program["TVObject"] and int(program["TVObject"]["SeasonNumber"]) != 0 and int(program["TVObject"]["EpisodeNumber"]) != 0:
                             SeasonNumber = '0' + str(program["TVObject"]["SeasonNumber"]) if int(program["TVObject"]["SeasonNumber"]) < 10 else str(program["TVObject"]["SeasonNumber"])
                             EpisodeNumber = '0' + str(program["TVObject"]["EpisodeNumber"]) if int(program["TVObject"]["EpisodeNumber"]) < 10 else str(program["TVObject"]["EpisodeNumber"])
