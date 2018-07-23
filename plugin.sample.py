@@ -454,7 +454,7 @@ def nextOnAir(source, text):
                 return
             next_showing = getNextShowing(show_id)
             if next_showing:
-                sendReply(source, ['下一次播出时间（北京时间）：', fixTime(next_showing['airtime']), '这集的标题是：', next_showing['episodeName']])
+                sendReply(source, ['下一次播出时间（东八区）：', fixTime(next_showing['airtime']), '这集的标题是：', next_showing['episodeName']])
             else:
                 result = ['在可预见的未来没有发现放送的喵~']
                 if show_name == 'ERROR':
@@ -552,7 +552,7 @@ def newOnAir(source, text):
                             EpisodeNo = '未知集数 '
                         if text.replace(' ','') == '#new':
                             if source["from"] != "telegram-inlinequery":
-                                sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                                sendReply(source, ['即将在' + channel["Channel"]["Name"] + '首播', program["Title"], '播出时间（东八区）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                                 return
                             else:
                                 message_text = '<b>' + program["Title"] + ' '
@@ -578,7 +578,7 @@ def newOnAir(source, text):
                                 })
                         elif text.replace(' ','') != '#new' and fixShowName(program["Title"]) == show_name:
                             if source["from"] != "telegram-inlinequery":
-                                sendReply(source, ['下一次首播时间（北京时间）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
+                                sendReply(source, ['下一次首播时间（东八区）：', fixTime(program["StartTime"]), '这集的标题是：', program["EpisodeTitle"]])
                                 return
                             else:
                                 message_text = '<b>' + show_name + ' '
