@@ -200,7 +200,10 @@ def startLive(argv=None, force=False):
         printlog("INFO", "Live switch is now ON.")
     addr = response["data"]["rtmp"]["addr"]
     code = response["data"]["rtmp"]["code"]
-    new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+    try:
+        new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+    except Exception:
+        new_link = addr + code
     printlog("INFO", "Attempting to restart live stream...")
     plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
     printlog("INFO", "The live stream should be back online now.")
