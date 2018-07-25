@@ -193,7 +193,7 @@ def startLive(argv=None, force=False):
         printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
         raise SystemExit
     elif response["data"]["change"] == 0:
-        printlog("WARNING", "Looks like the live switch is on already.")
+        printlog("INFO", "Looks like the live switch is on already.")
         if not force:
             return -1
     else:
@@ -203,6 +203,7 @@ def startLive(argv=None, force=False):
     try:
         new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
     except Exception:
+        printlog("WARNING", "Failed to retrive IP-based push address, falling back to domain-based.")
         new_link = addr + code
     printlog("INFO", "Attempting to restart live stream...")
     plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
