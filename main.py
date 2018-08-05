@@ -177,6 +177,7 @@ def startLive(argv=None, force=False):
     global startLive_lock
     try:
         if startLive_lock:
+            printlog("DEBUG", "startLive_lock is on, cannot proceed.")
             return
     except NameError:
         pass
@@ -188,6 +189,7 @@ def startLive(argv=None, force=False):
         'platform': 'pc_link',
         'area_v2': getConfig('host', 'category')
     }
+    printlog("DEBUG", "Sending startLive request...")
     response = bilireq(url, data=data).json()
     if response["code"] != 0:
         printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
