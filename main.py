@@ -227,6 +227,7 @@ def listenBiliMsg():
     timeout_count = 0
     while True:
         try:
+            printlog("DEBUG", "Reading bilibili PM status...")
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
             response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
             if response["code"] != 0:
@@ -239,6 +240,7 @@ def listenBiliMsg():
                     printlog("ERROR", "Disabling bilibili private message now.")
                     return False
             if response["data"]["latest_seqno"] != seqno and response["data"]["latest_seqno"] != 0: # lastest_seqno = 0 means an invalid response from bilibili
+                printlog("DEBUG", "New bilibili PM detected, fetching...")
                 has_more = True
                 while has_more:
                     url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
@@ -254,6 +256,7 @@ def listenBiliMsg():
                     has_more = response["data"]["has_more"]
                     seqno = response["data"]["max_seqno"]
                     for message in response["data"]["messages"]:
+                        printlog("DEBUG", "Querying additional info about bilibili PM sender...")
                         url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
                         response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
                         if response["code"] != 0:
