@@ -228,48 +228,37 @@ def listenBiliMsg():
     while True:
         try:
             printlog("DEBUG", "Reading bilibili PM status...")
-            url = "https://api.vc.bilibili.com/web_im/v1/web_im/unread_msgs"
-            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, timeout=3).json()
+            url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
+            try:
+                response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
+            except Exception:
+                printlog("WARNING", "Failed to receive bilibili private message due to network error.")
+                printlog("TRACEBACK", "\n" + traceback.format_exc())
+                continue
             if response["code"] != 0:
-                if response["msg"] == "timeout":
-                    continue
-                elif response["code"] == -6: # Server mistakenly thinks we are unauthorized
-                    continue
+                printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
+                continue
+            has_more = response["data"]["has_more"]
+            seqno = response["data"]["max_seqno"]
+            if not "messages" in response["data"]:
+                continue
+            printlog("DEBUG", "New bilibili PM detected, processing...")
+            for message in response["data"]["messages"]:
+                printlog("DEBUG", "Querying additional info about bilibili PM sender...")
+                url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
+                response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
+                if response["code"] != 0:
+                    printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ". API says " + response["msg"])
+                    username = ""
                 else:
-                    printlog("ERROR", "Failed to receive bilibili private message updates. API says " + response["msg"])
-                    printlog("ERROR", "Disabling bilibili private message now.")
-                    return False
-            if response["data"]["latest_seqno"] != seqno and response["data"]["latest_seqno"] != 0: # lastest_seqno = 0 means an invalid response from bilibili
-                printlog("DEBUG", "New bilibili PM detected, fetching...")
-                has_more = True
-                while has_more:
-                    url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
-                    try:
-                        response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
-                    except Exception:
-                        printlog("WARNING", "Failed to receive bilibili private message due to network error.")
-                        printlog("TRACEBACK", "\n" + traceback.format_exc())
-                        continue
-                    if response["code"] != 0:
-                        printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
-                        continue
-                    has_more = response["data"]["has_more"]
-                    seqno = response["data"]["max_seqno"]
-                    for message in response["data"]["messages"]:
-                        printlog("DEBUG", "Querying additional info about bilibili PM sender...")
-                        url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
-                        response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
-                        if response["code"] != 0:
-                            printlog("ERROR", "Failed to get username of bilibili UID " + str(message["sender_uid"]) + ". API says " + response["msg"])
-                            username = ""
-                        else:
-                            username = response["data"][0]["uname"]
-                        source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
-                        if message["msg_type"] == 1:
-                            printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
-                        if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
-                            sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
+                    username = response["data"][0]["uname"]
+                source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
+                if message["msg_type"] == 1:
+                    printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
+                if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
+                    sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
             timeout_count = 0
+            time.sleep(5)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
             if timeout_count >= 5:
