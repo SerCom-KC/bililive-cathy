@@ -227,6 +227,7 @@ def listenBiliMsg():
     timeout_count = 0
     while True:
         try:
+            time.sleep(5)
             printlog("DEBUG", "Reading bilibili PM status...")
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
             try:
@@ -259,7 +260,6 @@ def listenBiliMsg():
                 if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
                     sendReply(source, ["喵，Cathy不是很确定你在讲什么的喵~", "你可能需要去找我的主人 @SerCom_KC，或者发送 #help 获取命令列表的喵~"])
             timeout_count = 0
-            time.sleep(5)
         except requests.exceptions.ReadTimeout:
             timeout_count += 1
             if timeout_count >= 5:
