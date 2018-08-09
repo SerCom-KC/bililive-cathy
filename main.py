@@ -239,7 +239,8 @@ def listenBiliMsg():
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
                 continue
             has_more = response["data"]["has_more"]
-            seqno = response["data"]["max_seqno"]
+            if "max_seqno" in response["data"]:
+                seqno = response["data"]["max_seqno"]
             if not "messages" in response["data"]:
                 continue
             printlog("DEBUG", "New bilibili PM detected, processing...")
