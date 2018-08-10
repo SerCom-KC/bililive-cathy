@@ -182,36 +182,43 @@ def startLive(argv=None, force=False):
     except NameError:
         pass
     startLive_lock = True
-    url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
-    data = {
-        'access_key': getConfig('host', 'accesskey'),
-        'room_id': getConfig('host', 'roomid'),
-        'platform': 'pc_link',
-        'area_v2': getConfig('host', 'category')
-    }
-    printlog("DEBUG", "Sending startLive request...")
-    response = bilireq(url, data=data).json()
-    if response["code"] != 0:
-        printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
-        raise SystemExit
-    elif response["data"]["change"] == 0:
-        printlog("INFO", "Looks like the live switch is on already.")
-        if not force:
-            return -1
-    else:
-        printlog("INFO", "Live switch is now ON.")
-    addr = response["data"]["rtmp"]["addr"]
-    code = response["data"]["rtmp"]["code"]
     try:
-        new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+        url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
+        data = {
+            'access_key': getConfig('host', 'accesskey'),
+            'room_id': getConfig('host', 'roomid'),
+            'platform': 'pc_link',
+            'area_v2': getConfig('host', 'category')
+        }
+        printlog("DEBUG", "Sending startLive request...")
+        response = bilireq(url, data=data).json()
+        if response["code"] != 0:
+            printlog("ERROR", "Failed to turn on the switch. API says " + response["msg"])
+            raise SystemExit
+        elif response["data"]["change"] == 0:
+            printlog("INFO", "Looks like the live switch is on already.")
+            if not force:
+                startLive_lock = False
+                return -1
+        else:
+            printlog("INFO", "Live switch is now ON.")
+        addr = response["data"]["rtmp"]["addr"]
+        code = response["data"]["rtmp"]["code"]
+        try:
+            new_link = requests.get(response["data"]["rtmp"]["new_link"], timeout=3).json()["data"]["url"]
+        except Exception:
+            printlog("WARNING", "Failed to retrive IP-based push address, falling back to domain-based.")
+            new_link = addr + code
+        printlog("INFO", "Attempting to restart live stream...")
+        plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
+        printlog("INFO", "The live stream should be back online now.")
+        startLive_lock = False
+        return 0
     except Exception:
-        printlog("WARNING", "Failed to retrive IP-based push address, falling back to domain-based.")
-        new_link = addr + code
-    printlog("INFO", "Attempting to restart live stream...")
-    plugin.initStream(argv, notice=True if argv else False, rtmp_push_address=new_link)
-    printlog("INFO", "The live stream should be back online now.")
-    startLive_lock = False
-    return 0
+        printlog("ERROR", "An unexpected error occurred while starting live stream.")
+        printlog("TRACEBACK", "\n" + traceback.format_exc())
+        startLive_lock = False
+        return -1
 
 
 def listenBiliMsg():
