@@ -163,10 +163,10 @@ def sendDanmaku(text):
 
 def isLiving():
     printlog("INFO", "Checking if live stream is down...")
-    url = 'https://live.bilibili.com/bili/isliving/' + getConfig('host', 'uid')
-    response = requests.get(url, timeout=3).text.replace('(', '').replace(');', '')
-    live_statusdata = json.loads(response)["data"]
-    if live_statusdata == "":
+    url = 'https://api.live.bilibili.com/room/v1/Room/getRoomInfoOld'
+    response = requests.get(url, params={"mid": getConfig('host', 'uid')}, timeout=3).json()
+    live_statusdata = response["data"]
+    if live_statusdata["liveStatus"] != 1:
         return False
     else:
         printlog("INFO", "Live stream switch is ON.")
@@ -234,8 +234,7 @@ def listenBiliMsg():
     timeout_count = 0
     while True:
         try:
-            time.sleep(5)
-            printlog("DEBUG", "Reading bilibili PM status...")
+            time.sleep(60)
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
             try:
                 response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
