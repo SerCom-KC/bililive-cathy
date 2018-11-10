@@ -11,6 +11,7 @@ import pytz
 from generic import *
 from threading import Thread
 import plugin
+import random
 
 danmaku_lock = False
 bilimsg_lock = False
@@ -63,8 +64,9 @@ def sendBiliMsg(source, text):
                    "msg[receiver_type]": 1,
                    "msg[msg_type]": 1,
                    "msg[content]": '{"content":"' + text + '"}',
-                   "msg[timestamp]": int(time.time())
-               }, cookies=getBiliCookie('assist')).json()
+                   "msg[timestamp]": int(time.time()),
+                   "msg[dev_id]": source["dev_id"]
+               }, cookies=getBiliCookie('assist'), headers={"Referer": "https://message.bilibili.com/"}).json()
     time.sleep(1)
     bilimsg_lock = False
     if resp["code"] != 0:
@@ -230,14 +232,22 @@ def listenBiliMsg():
     if response["code"] != 0:
         printlog("ERROR", "Failed to initialize bilibili private message. API says " + response["msg"])
         raise SystemExit
+    # generate device_id
+    device_id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"
+    for i in range(0, len(device_id)):
+        r = int(16 * random.random())
+        if device_id[i] == "x":
+            device_id = device_id[:i] + format(r, 'x').upper() + device_id[i + 1:]
+        elif device_id[i] == "y":
+            device_id = device_id[:i] + format(3 & r | 8, 'x').upper() + device_id[i + 1:]
     seqno = response["data"]["latest_seqno"] # we can't use ack_seqno at the moment, because that value can only be updated by mobile app via (maybe?) websocket
     timeout_count = 0
     while True:
         try:
-            time.sleep(60)
+            time.sleep(10)
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
             try:
-                response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid'))}, timeout=10).json()
+                response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid')), "dev_id": device_id}, timeout=10).json()
             except Exception:
                 printlog("WARNING", "Failed to receive bilibili private message due to network error.")
                 printlog("TRACEBACK", "\n" + traceback.format_exc())
@@ -250,8 +260,10 @@ def listenBiliMsg():
                 seqno = response["data"]["max_seqno"]
             if not "messages" in response["data"]:
                 continue
-            printlog("DEBUG", "New bilibili PM detected, processing...")
+            printlog("DEBUG", "New bilibili PMs detected, processing...")
             for message in response["data"]["messages"]:
+                if message["sender_uid"] == int(getConfig('assist', 'uid')):
+                    continue
                 printlog("DEBUG", "Querying additional info about bilibili PM sender...")
                 url = "https://api.vc.bilibili.com/account/v1/user/infos" # API does not return uname, so let's make an additional query
                 response = s.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "uids": message["sender_uid"]}, timeout=3).json()
@@ -260,7 +272,7 @@ def listenBiliMsg():
                     username = ""
                 else:
                     username = response["data"][0]["uname"]
-                source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username}
+                source = {"from": "bili-msg", "uid": message["sender_uid"], "username": username, "dev_id": device_id}
                 if message["msg_type"] == 1:
                     printlog("INFO", "New bilibili PM from " + username + " (" + str(source["uid"]) + ") at " + str(message["timestamp"]) + ": " + json.loads(message["content"])["content"])
                 if message["msg_type"] != 1 or not commandParse(source, json.loads(message["content"])["content"]):
