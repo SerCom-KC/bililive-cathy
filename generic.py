@@ -56,7 +56,9 @@ def checkToken(user, firstrun=False):
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
         check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
         resp = requests.get(check_auth_url, timeout=3).json()
-        if resp['code'] == -1:
+        if resp["data"] == -400:
+            printlog("WARNING", "Cannot verify your appkey at the moment. Will try to proceed anyway.")
+        elif resp['code'] == -1:
             printlog("ERROR", "Your appkey is invalid. Find another one!")
             raise SystemExit
         elif resp['code'] == -3:
