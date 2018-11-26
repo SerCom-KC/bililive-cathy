@@ -44,11 +44,51 @@ def setConfig(section, entry, value):
         config.write(configFile)
 
 def getBiliCookie(user):
-    url = 'https://passport.bilibili.com/api/login/sso'
+    from collections import OrderedDict
+    url = "https://passport.bilibili.com/api/login/sso"
     params = {
-        'access_key': getConfig(user, 'accesskey')
+        "appkey": getConfig("oauth", "appkey"),
+        "access_key": getConfig(user, "accesskey"),
+        "ts": str(int(time.time()))
     }
-    return bilireq(url, params=params).cookies
+    params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
+    prestr = '&'.join('%s=%s' % key for key in params.items())
+    params['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
+    resp = requests.get(url, params=params, allow_redirects=False, timeout=3)
+    return resp.cookies
+
+def login(user):
+    from Crypto.PublicKey import RSA
+    from Crypto.Cipher import PKCS1_v1_5
+    from base64 import b64encode
+    flag = False
+    try:
+        username = getConfig(user, "username")
+        password = getConfig(user, "password")
+    except Exception:
+        flag = True
+    if username == "" or password == "":
+        flag = True
+    if flag:
+        printlog("ERROR", "You didn't set up username/password of the %s account in your config file." % (user))
+        raise SystemExit
+    resp = bilireq("https://passport.bilibili.com/api/oauth2/getKey").json()
+    if resp["code"] != 0:
+        print("ERROR", "Failed to get bilibili's RSA public key. Please check your appkey/appsecret.")
+        raise SystemExit
+    key = resp["data"]
+    encryptor = PKCS1_v1_5.new(RSA.importKey(bytes(key["key"], "utf-8")))
+    password = str(b64encode(encryptor.encrypt(bytes(key["hash"] + password, "utf-8"))), "utf-8")
+    username = username.replace("/", "%2F").replace("=", "%3D").replace("@", "%40").replace("+", "%2B")
+    password = password.replace("/", "%2F").replace("=", "%3D").replace("@", "%40").replace("+", "%2B")
+    resp = bilireq("https://passport.bilibili.com/api/v2/oauth2/login", data={"username": username, "password": password}, no_urlencode=True).json()
+    if resp["code"] == -105:
+        print("ERROR", "bilibili is requiring a CAPTCHA challenge. Please try again later.")
+    elif resp["code"] != 0:
+        print("ERROR", "Failed to sign in to account %s with username/password. Please check your config file." % (user))
+    setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
+    setConfig(user, "uid", resp["data"]["token_info"]["mid"])
+    setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
 
 def checkToken(user, firstrun=False):
     if firstrun:
@@ -65,9 +105,9 @@ def checkToken(user, firstrun=False):
             printlog("ERROR", "Your appsecret does not match the appkey you're using. Maybe typo?")
             raise SystemExit
         if getConfig(user, 'accesskey') == '':
-            printlog("ERROR", "You must set up access key of the " + user + " account. If you don't have one, generate at " + auth_url)
-            raise SystemExit
-    if getConfig(user, 'expires') == '' or getConfig(user, 'uid') == '':
+            printlog("ERROR", "Access key of the %s account is missing. Will try to sign in with username/password." % (user))
+            login(user)
+    if firstrun or getConfig(user, 'expires') == '' or getConfig(user, 'uid') == '':
         url = 'https://passport.bilibili.com/api/oauth'
         params = {
             'access_key': getConfig(user, 'accesskey')
@@ -77,8 +117,8 @@ def checkToken(user, firstrun=False):
             setConfig(user, 'expires', resp['access_info']['expires'])
             setConfig(user, 'uid', resp['access_info']['mid'])
         else:
-            printlog("ERROR", "Access key of the " + user + " account is invalid. Re-generate at " + auth_url)
-            raise SystemExit
+            printlog("ERROR", "Access key of the %s account is invalid. Will try to sign in with username/password." % (user))
+            login(user)
     if getConfig('host', 'roomid') == '':
         url = 'https://space.bilibili.com/ajax/live/getLive'
         params = {
@@ -98,28 +138,22 @@ def checkToken(user, firstrun=False):
         if resp['code'] == 0:
             setConfig(user, 'expires', resp['expires'])
         else:
-            printlog("ERROR", "Failed to renew the access key of the " + user + " account. Re-generate manually at " + auth_url)
-            quit()
+            printlog("WARNING", "Failed to renew the access key of the %s account. Will try to sign in with username/password." % (user))
+            login(user)
 
-def bilireq(url, params={}, headers={}, cookies={}, data={}):
+def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False):
     from collections import OrderedDict
     headers['User-Agent'] = ''
-    if 'access_key' in data: # Some APIs require access_key in POST data instead of params
+    if data == {}: data = params
+    if cookies == {}:
         data['appkey'] = getConfig('oauth', 'appkey')
         data['ts'] = str(int(time.time()))
         data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
         prestr = '&'.join('%s=%s' % key for key in data.items())
         data['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
-    else:
-        params['appkey'] = getConfig('oauth', 'appkey')
-        params['ts'] = str(int(time.time()))
-        params = OrderedDict(sorted(params.items(), key=lambda params:params[0]))
-        prestr = '&'.join('%s=%s' % key for key in params.items())
-        params['sign'] = md5(str(prestr + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
-    if data == {}:
-        return requests.get(url, params=params, headers=headers, cookies=cookies, allow_redirects=False, timeout=3)
-    else:
-        headers['Content-Type'] = 'application/x-www-form-urlencoded'
-        if cookies != {}:
-            data["csrf_token"] = cookies["bili_jct"]
-        return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
+    if no_urlencode:
+        data = '&'.join('%s=%s' % key for key in data.items())
+    headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    if cookies != {}:
+        data["csrf_token"] = cookies["bili_jct"]
+    return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
