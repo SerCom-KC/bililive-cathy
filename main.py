@@ -480,7 +480,7 @@ def main():
         streamoff_count = 0
         while True:
             try:
-                plugin.getSchedule()
+                #plugin.getSchedule()
                 checkConfig()
                 if not checkStream():
                     streamoff_count += 1
