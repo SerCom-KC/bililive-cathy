@@ -145,6 +145,7 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False)
     from collections import OrderedDict
     headers['User-Agent'] = ''
     if data == {}: data = params
+    else: data.update(params)
     if cookies == {}:
         data['appkey'] = getConfig('oauth', 'appkey')
         data['ts'] = str(int(time.time()))
