@@ -19,16 +19,10 @@ shows_shortcode = [
     {"showId": "438472", "shortcode": "ben10"},
     {"showId": "419032", "shortcode": "wbb"},
     {"showId": "440832", "shortcode": "okko"},
-    {"showId": "444812", "shortcode": "fs"},
     {"showId": "444772", "shortcode": "aao"},
     {"showId": "399692", "shortcode": "su"},
     {"showId": "425772", "shortcode": "ppg2016"},
-    {"showId": "447432", "shortcode": "flcl"},
-    {"showId": "401312", "shortcode": "ram"},
-    {"showId": "398292", "shortcode": "mp"},
-    {"showId": "423572", "shortcode": "mm"},
-    {"showId": "331864", "shortcode": "rc"},
-    {"showId": "447434", "shortcode": "flclpro"}
+    {"showId": "423572", "shortcode": "mm"}
 ]
 
 def isAdmin(source):
@@ -53,14 +47,18 @@ def commandParse(source, text):
         else:
             return False
     elif text == '#now':
-        nowOnAir(source)
-        #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
+        if source == "telegram-inlinequery":
+            nowOnAir(source)
+        else:
+            sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('#new') == 0:
         newOnAir(source, text)
         #sendReply(source, ['这个功能被禁用了，非常抱歉呜喵QAQ'])
     elif text.find('#next') == 0:
-        nextOnAir(source, text)
-        #sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
+        if source == "telegram-inlinequery":
+            nextOnAir(source, text)
+        else:
+            sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('字幕') != -1 and source["from"] == "bili-danmaku":
         sendReply(source, ['需要英文字幕的话请前往备用直播间喵~'])
     elif text == '#help':
@@ -79,10 +77,6 @@ def commandParse(source, text):
                 '#next',
                 '如果你想知道B站直播间接下来会放什么剧的话，请发送这个命令喵~',
                 '跟#now一样有可能会显示两集的标题（也就是接下来的半小时档），所以请一定按实际情况为准的喵~',
-                '想知道自己想看的剧什么时候放的话，请在后面加上这个剧的缩写或者数字ID（特纳API中使用的ID，不知道的话不要乱试喵）',
-                '比如 #next su 这样的喵~',
-                '但是请注意多数情况下是重播而不是更新的喵~',
-                '支持的缩写列表请发送 #help list 查看的喵~',
                 '',
                 '#new',
                 '如果你想知道自己想看的剧什么时候更新的话，请使用这个命令喵~',
@@ -174,12 +168,15 @@ def fixShowName(show_name):
 
     return show_name
 
-def fixEpisodeName(episode_name):
+def fixEpisodeName(episode_name, force_the=False):
     for title in episode_name.split('/'):
         fixed = re.sub(r'(.*?) $', 'The \\1', title)
         fixed = re.sub(r'(.*?), The$', 'The \\1', fixed)
-        fixed = re.sub(r'(.*?), An$', 'An \\1', fixed)
-        fixed = re.sub(r'(.*?), A$', 'A \\1', fixed)
+        if force_the and not fixed.startswith("The "):
+            fixed = "The " + fixed
+        else:
+            fixed = re.sub(r'(.*?), An$', 'An \\1', fixed)
+            fixed = re.sub(r'(.*?), A$', 'A \\1', fixed)
         episode_name = episode_name.replace(title, fixed)
 
     return episode_name.replace('/', '; ')
@@ -262,17 +259,18 @@ def checkSchedule(allshows, index, prev_show=''):
         else:
             setConfig('extras', 'next_title', fixShowName(allshows[index].xpath('@urlName')[0]))
         # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
-        url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
-        params = {
-            'methodName': 'getEpisodeDesc',
-            'showId': allshows[index].xpath('@showId')[0],
-            'episodeId': allshows[index].xpath('@episodeId')[0],
-            'isFeatured': 'N' #allshows[index].xpath('@isFeatured')[0]
-        }
-        episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
-        if episodeName[-1] == ' ':
-            episodeName = episodeName[:-1]
-        setConfig('extras', 'next_episodeName', fixEpisodeName(episodeName))
+        #url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
+        #params = {
+        #    'methodName': 'getEpisodeDesc',
+        #    'showId': allshows[index].xpath('@showId')[0],
+        #    'episodeId': allshows[index].xpath('@episodeId')[0],
+        #    'isFeatured': 'N' #allshows[index].xpath('@isFeatured')[0]
+        #}
+        #episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
+        #if episodeName[-1] == ' ':
+        #    episodeName = episodeName[:-1]
+        episodeName = fixEpisodeName(allshows[index].xpath("@episodeName")[0], force_the=allshows[index].xpath("@showId")[0] == "376453")
+        setConfig('extras', 'next_episodeName', episodeName)
         setConfig('extras', 'next_airtime', convertTime(show_time))
         # update now_last_query
         if prev_show != '':
@@ -289,17 +287,18 @@ def checkSchedule(allshows, index, prev_show=''):
         else:
             setConfig('extras', 'now_title', fixShowName(show.xpath('@urlName')[0]))
         # fetch episodeName manually to avoid "The" problem in https://gitlab.com/ctoon/cn-schedule-fetcher/issues/1 since getEpisodeDesc returns standard ", The"
-        url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
-        params = {
-            'methodName': 'getEpisodeDesc',
-            'showId': show.xpath('@showId')[0],
-            'episodeId': show.xpath('@episodeId')[0],
-            'isFeatured': 'N' #show.xpath('@isFeatured')[0]
-        }
-        episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
-        if episodeName[-1] == ' ':
-            episodeName = episodeName[:-1]
-        setConfig('extras', 'now_episodeName', fixEpisodeName(episodeName))
+        #url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/ScheduleServices'
+        #params = {
+        #    'methodName': 'getEpisodeDesc',
+        #    'showId': show.xpath('@showId')[0],
+        #    'episodeId': show.xpath('@episodeId')[0],
+        #    'isFeatured': 'N' #show.xpath('@isFeatured')[0]
+        #}
+        #episodeName = etree.XML(requests.get(url, params=params, timeout=3).content).xpath("//Desc/episodeDesc/text()")[0]
+        #if episodeName[-1] == ' ':
+        #    episodeName = episodeName[:-1]
+        episodeName = fixEpisodeName(show.xpath("@episodeName")[0], force_the=show.xpath("@showId")[0] == "376453")
+        setConfig('extras', 'now_episodeName', episodeName)
         setConfig('extras', 'now_airtime', convertTime(show_time))
         printlog("INFO", "Now on air: " + getConfig('extras', 'now_title') + ' - ' + getConfig('extras', 'now_episodeName'))
         return True
@@ -314,7 +313,7 @@ def getSchedule(source=None, channel='undefined'):
     if source:
         sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
     if channel == 'cn' or channel == 'as' or getChannel() == 'cn' or getChannel() == 'as' or getChannel() == 'restrict':
-        url = 'https://www.adultswim.com/adultswimdynsched/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
+        url = 'https://www.cartoonnetwork.com/cnschedule/xmlServices/' + getUSEastTime('%d') + '.EST.xml'
         allshows = etree.XML(requests.get(url, timeout=3).content)
         cn_start = False
         for index, show in enumerate(allshows):
@@ -326,7 +325,7 @@ def getSchedule(source=None, channel='undefined'):
                     break
             if not cn_start: # parse yesterday's [adult swim] schedule, from 0:00
                 cn_start = True
-                url = 'https://www.adultswim.com/adultswimdynsched/asXml/' + getUSEastTime('%d', yesterday=True) + '.EST.xml'
+                url = 'https://www.cartoonnetwork.com/cnschedule/asXml/' + getUSEastTime('%d', yesterday=True) + '.EST.xml'
                 allshows_aswim = etree.XML(requests.get(url, timeout=3).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
                 for index_aswim, show_aswim in enumerate(allshows_aswim):
                     if checkSchedule(allshows_aswim, index_aswim):
@@ -341,7 +340,7 @@ def getSchedule(source=None, channel='undefined'):
             if checkflag:
                 return True
         # parse today's [adult swim] schedule
-        url = 'https://www.adultswim.com/adultswimdynsched/asXml/' + getUSEastTime('%d') + '.EST.xml'
+        url = 'https://www.cartoonnetwork.com/cnschedule/asXml/' + getUSEastTime('%d') + '.EST.xml'
         allshows_aswim = etree.XML(requests.get(url, timeout=3).content).xpath('//allshows/show[@date="' + getUSEastTime('%m/%d/%Y') + '"]')
         for index_aswim, show_aswim in enumerate(allshows_aswim):
             if index_aswim == 0:
@@ -358,6 +357,17 @@ def getSchedule(source=None, channel='undefined'):
             return True
         printlog('ERROR', 'An error occurred when parsing the schedule. The time now is ' + time.ctime())
         return False # not found
+    elif channel == 'cnstream' or getChannel() == 'cnstream':
+        resp = requests.get("https://cms-api.cartoonnetwork.com/live-stream", timeout=3).json()
+        setConfig('extras', 'now_title', resp[0]["seriesName"])
+        setConfig('extras', 'now_episodeName', resp[0]["episodeName"])
+        setConfig('extras', 'now_airtime', int(resp[0]["time"]/1000))
+        setConfig('extras', 'next_title', resp[1]["seriesName"])
+        setConfig('extras', 'next_episodeName', resp[1]["episodeName"])
+        setConfig('extras', 'next_airtime', int(resp[1]["time"]/1000))
+        return True
+    else:
+        return False
 
 def nowOnAir(source):
     from main import sendReply
@@ -377,7 +387,7 @@ def nowOnAir(source):
             result.append(now_last_query['episodeName'])
         else:
             result.append(now_last_query['title'])
-            if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '':
+            if now_last_query['episodeName'] != None and now_last_query['episodeName'] != '' and now_last_query["episodeName"] != "Cartoon Network":
                 result.append('这集的标题是：')
                 result.append(now_last_query['episodeName'])
         sendReply(source, result)
@@ -442,7 +452,7 @@ def nextOnAir(source, text):
                 result.append(next_last_query['episodeName'])
             else:
                 result.append(next_last_query['title'])
-                if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '':
+                if next_last_query['episodeName'] != None and next_last_query['episodeName'] != '' and next_last_query["episodeName"] != "Cartoon Network":
                     result.append('这集的标题是：')
                     result.append(next_last_query['episodeName'])
             sendReply(source, result)
@@ -452,14 +462,15 @@ def nextOnAir(source, text):
             if show_id == 'ERROR':
                 sendReply(source, ['你输入的命令好像有误的喵~'])
                 return
-            next_showing = getNextShowing(show_id)
-            if next_showing:
-                sendReply(source, ['下一次播出时间（东八区）：', fixTime(next_showing['airtime']), '这集的标题是：', next_showing['episodeName']])
-            else:
-                result = ['在可预见的未来没有发现放送的喵~']
-                if show_name == 'ERROR':
-                    result.append('也许是你输错了数字ID喵？')
-                sendReply(source, result)
+            sendReply(source, ["这个功能被禁用了，非常抱歉呜喵QAQ"])
+            #next_showing = getNextShowing(show_id)
+            #if next_showing:
+            #    sendReply(source, ['下一次播出时间（东八区）：', fixTime(next_showing['airtime']), '这集的标题是：', next_showing['episodeName']])
+            #else:
+            #    result = ['在可预见的未来没有发现放送的喵~']
+            #    if show_name == 'ERROR':
+            #        result.append('也许是你输错了数字ID喵？')
+            #    sendReply(source, result)
             return
     else:
         result = []
@@ -627,13 +638,13 @@ def newOnAir(source, text):
     return
 
 def roomTitle(title):
-    url = 'https://api.live.bilibili.com/mhand/Assistant/updateRoomInfo'
+    url = "https://api.live.bilibili.com/room/v1/Room/update"
     params = {
-        'access_key': getConfig('host', 'accesskey')
+        "access_key": getConfig("host", "accesskey")
     }
     data = {
-        'roomId': getConfig('host', 'roomid'),
-        'title': title
+        "room_id": getConfig("host", "roomid"),
+        "title": title
     }
     response = bilireq(url, params=params, data=data).json()
     if response["code"] == 0:
@@ -643,3 +654,4 @@ def roomTitle(title):
 
 def initStream(argv):
     printlog("INFO", "I'm going to do nothing. Write some code in plugin.py please.")
+
