@@ -67,14 +67,14 @@ def login(user):
         password = getConfig(user, "password")
     except Exception:
         flag = True
-    if username == "" or password == "":
+    if not flag and username == "" or password == "":
         flag = True
     if flag:
         printlog("ERROR", "You didn't set up username/password of the %s account in your config file." % (user))
         raise SystemExit
     resp = bilireq("https://passport.bilibili.com/api/oauth2/getKey").json()
     if resp["code"] != 0:
-        print("ERROR", "Failed to get bilibili's RSA public key. Please check your appkey/appsecret.")
+        printlog("ERROR", "Failed to get bilibili's RSA public key. Please check your appkey/appsecret.")
         raise SystemExit
     key = resp["data"]
     encryptor = PKCS1_v1_5.new(RSA.importKey(bytes(key["key"], "utf-8")))
@@ -83,14 +83,16 @@ def login(user):
     password = password.replace("/", "%2F").replace("=", "%3D").replace("@", "%40").replace("+", "%2B")
     resp = bilireq("https://passport.bilibili.com/api/v2/oauth2/login", data={"username": username, "password": password}, no_urlencode=True).json()
     if resp["code"] == -105:
-        print("ERROR", "bilibili is requiring a CAPTCHA challenge. Please try again later.")
+        printlog("ERROR", "bilibili is requiring a CAPTCHA challenge. Please try again later.")
     elif resp["code"] != 0:
-        print("ERROR", "Failed to sign in to account %s with username/password. Please check your config file." % (user))
+        printlog("ERROR", "Failed to sign in to account %s with username/password. Please check your config file." % (user))
     setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
     setConfig(user, "uid", resp["data"]["token_info"]["mid"])
     setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
+    setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
 
 def checkToken(user, firstrun=False):
+    third_login = True
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
@@ -98,6 +100,7 @@ def checkToken(user, firstrun=False):
         resp = requests.get(check_auth_url, timeout=3).json()
         if resp["data"] == -400:
             printlog("WARNING", "Cannot verify your appkey at the moment. Will try to proceed anyway.")
+            third_login = False
         elif resp['code'] == -1:
             printlog("ERROR", "Your appkey is invalid. Find another one!")
             raise SystemExit
@@ -130,13 +133,26 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Failed to get room ID of host.")
     if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
-        url = 'https://passport.bilibili.com/api/login/renewToken'
-        params = {
-            'access_key': getConfig(user, 'accesskey')
-        }
+        if third_login:
+            url = "https://passport.bilibili.com/api/login/renewToken"
+            params = {
+                "access_key": getConfig(user, "accesskey")
+            }
+        else:
+            url = "https://passport.bilibili.com/api/oauth2/refreshToken"
+            params = {
+                "access_token": getConfig(user, "accesskey"),
+                "appkey": getConfig("oauth", "appkey"),
+                "refresh_token": getConfig(user, "refreshtoken")
+            }
         resp = bilireq(url, params=params).json()
         if resp['code'] == 0:
-            setConfig(user, 'expires', resp['expires'])
+            if third_login:
+                setConfig(user, 'expires', resp['expires'])
+            else:
+                setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
+                setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
+                setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
         else:
             printlog("WARNING", "Failed to renew the access key of the %s account. Will try to sign in with username/password." % (user))
             login(user)
