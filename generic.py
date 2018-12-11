@@ -67,7 +67,7 @@ def login(user):
         password = getConfig(user, "password")
     except Exception:
         flag = True
-    if not flag and username == "" or password == "":
+    if not flag and (username == "" or password == ""):
         flag = True
     if flag:
         printlog("ERROR", "You didn't set up username/password of the %s account in your config file." % (user))
@@ -150,9 +150,8 @@ def checkToken(user, firstrun=False):
             if third_login:
                 setConfig(user, 'expires', resp['expires'])
             else:
-                setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
-                setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
-                setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
+                setConfig(user, "accesskey", resp["data"]["access_token"])
+                setConfig(user, "refreshtoken", resp["data"]["refresh_token"])
         else:
             printlog("WARNING", "Failed to renew the access key of the %s account. Will try to sign in with username/password." % (user))
             login(user)
