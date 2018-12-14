@@ -246,12 +246,7 @@ def listenBiliMsg():
         try:
             time.sleep(10)
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
-            try:
-                response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid')), "dev_id": device_id}, timeout=10).json()
-            except Exception:
-                printlog("WARNING", "Failed to receive bilibili private message due to network error.")
-                printlog("TRACEBACK", "\n" + traceback.format_exc())
-                continue
+            response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid')), "dev_id": device_id}, timeout=10).json()
             if response["code"] != 0:
                 printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
                 continue
@@ -434,18 +429,18 @@ def checkStream():
             "platform": "web",
             "otype": "json"
         }
-        resp = requests.get(url, params=params, timeout=3).json()
+        resp = requests.get(url, params=params, timeout=10).json()
         stream_url = resp["data"]["durl"][0]["url"]
-        timeout_count = 0
-        while timeout_count < 3:
+        fail_count = 0
+        while fail_count < 3:
             try:
                 stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
                 break
-            except requests.exceptions.ReadTimeout:
-                timeout_count += 1
+            except requests.exceptions:
+                fail_count += 1
                 continue
-        if timeout_count >= 3:
-            printlog("WARNING", "Connection timed out 3 times while checking bilibili live stream.")
+        if fail_count >= 3:
+            printlog("WARNING", "Connection error occurred 3 times while checking bilibili live stream.")
             return True
     if stream_status_code == 404:
         return False
