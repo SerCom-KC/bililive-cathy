@@ -436,7 +436,7 @@ def checkStream():
             try:
                 stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
                 break
-            except requests.exceptions.ConnectionError:
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
                 fail_count += 1
                 continue
         if fail_count >= 3:
