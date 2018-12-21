@@ -144,22 +144,24 @@ def sendDanmaku(text):
              if not sendDanmaku(text[i:i+danmaku_limit]):
                  return False
         return True
-    url = "http://api.live.bilibili.com/msg/send"
-#    params = {
-#        'access_key': getConfig('assist', 'accesskey')
-#    }
+    url = "http://api.live.bilibili.com/api/sendmsg"
     data = {
-        'roomid': getConfig('host', 'roomid'),
-        'color': '16777215',
-        'fontsize': '25',
-        'mode': '1',
-        'msg': msg,
-        "rnd": int(time.time())
+        "access_key": getConfig("assist", "accesskey"),
+        "cid": getConfig("host", "roomid"),
+        "mid": getConfig("assist", "uid"),
+        "color": 16777215,
+        "fontsize": 25,
+        "mode": 1,
+        "pool": 1,
+        "type": "json",
+        "msg": msg,
+        "rnd": int(time.time()),
+        "playTime": "0.0"
     }
-    response = bilireq(url, data=data, cookies=getBiliCookie("assist")).json()
+    response = bilireq(url, data=data).json()
     time.sleep(1.5)
     if response["code"] != 0:
-        printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + str(response["msg"]))
+        printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + str(response["message"]))
         return False
     else:
         return True
@@ -437,7 +439,10 @@ def checkStream():
             try:
                 stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
                 break
-            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            except requests.exceptions.ConnectionError:
+                fail_count += 1
+                continue
+            except requests.exceptions.ReadTimeout:
                 fail_count += 1
                 continue
         if fail_count >= 3:
