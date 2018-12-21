@@ -172,4 +172,5 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False)
     headers['Content-Type'] = 'application/x-www-form-urlencoded'
     if cookies != {}:
         data["csrf_token"] = cookies["bili_jct"]
+        data["csrf"] = cookies["bili_jct"]
     return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)

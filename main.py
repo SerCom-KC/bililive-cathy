@@ -145,20 +145,21 @@ def sendDanmaku(text):
                  return False
         return True
     url = "http://api.live.bilibili.com/msg/send"
-    params = {
-        'access_key': getConfig('assist', 'accesskey')
-    }
+#    params = {
+#        'access_key': getConfig('assist', 'accesskey')
+#    }
     data = {
         'roomid': getConfig('host', 'roomid'),
         'color': '16777215',
         'fontsize': '25',
         'mode': '1',
-        'msg': msg
+        'msg': msg,
+        "rnd": int(time.time())
     }
-    response = bilireq(url, params=params, data=data).json()
+    response = bilireq(url, data=data, cookies=getBiliCookie("assist")).json()
     time.sleep(1.5)
     if response["code"] != 0:
-        printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + response["msg"])
+        printlog("ERROR", "Failed to send danmaku: " + text + ". API says " + str(response["msg"]))
         return False
     else:
         return True
