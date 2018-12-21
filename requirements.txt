@@ -1,0 +1,5 @@
+requests
+lxml
+pytz
+pycrypto
+websocket_client
