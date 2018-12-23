@@ -10,7 +10,7 @@ import logging
 
 def danmakuParse(message):
     response = json.loads(message)
-    if response['cmd'] == 'DANMU_MSG':
+    if "cmd" in response and response["cmd"] == "DANMU_MSG":
         if str(response['info'][2][0]) == getConfig('assist', 'uid'):
             printlog("INFO", "Danmaku sent: " + response['info'][1])
             return
@@ -44,7 +44,12 @@ def on_message(ws, data):
             count = count + 1
         elif data[i] == 125:
             if count == 1:
-                danmakuParse(data[start:i+1].decode())
+                message = data[start:i+1].decode()
+                try:
+                    danmakuParse(message)
+                except Exception:
+                    printlog("ERROR", "Unexpected error occurred when parsing danmaku. Original message: %s" % (message))
+                    printlog("TRACEBACK", "\n" + traceback.format_exc())
             count = count - 1
     return
 
