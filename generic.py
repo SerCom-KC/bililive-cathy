@@ -84,8 +84,10 @@ def login(user):
     resp = bilireq("https://passport.bilibili.com/api/v2/oauth2/login", data={"username": username, "password": password}, no_urlencode=True).json()
     if resp["code"] == -105:
         printlog("ERROR", "bilibili is requiring a CAPTCHA challenge. Please try again later.")
+        return
     elif resp["code"] != 0:
-        printlog("ERROR", "Failed to sign in to account %s with username/password. Please check your config file." % (user))
+        printlog("ERROR", "Failed to sign in to account %s with username/password. API says %s. Please check your config file." % (resp["message"], user))
+        return
     setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
     setConfig(user, "uid", resp["data"]["token_info"]["mid"])
     setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
