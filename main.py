@@ -425,18 +425,18 @@ def checkStream():
     except Exception:
         flag = True
     if flag:
-        url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
-        params = {
-            "cid": getConfig("host", "roomid"),
-            "quality": "4",
-            "platform": "web",
-            "otype": "json"
-        }
-        resp = requests.get(url, params=params, timeout=10).json()
-        stream_url = resp["data"]["durl"][0]["url"]
         fail_count = 0
         while fail_count < 3:
             try:
+                url = "https://api.live.bilibili.com/room/v1/Room/playUrl"
+                params = {
+                    "cid": getConfig("host", "roomid"),
+                    "quality": "4",
+                    "platform": "web",
+                    "otype": "json"
+                }
+                resp = requests.get(url, params=params, timeout=10).json()
+                stream_url = resp["data"]["durl"][0]["url"]
                 stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
                 break
             except requests.exceptions.ConnectionError:
@@ -478,6 +478,7 @@ def main():
             Thread(target=listenTelegramUpdate).start()
         if getConfig('mastodon', 'domain') != "" and getConfig('mastodon', 'accesstoken') != "":
             Thread(target=listenMastodonUpdate).start()
+        plugin.getSchedule(forceupdate=True)
         streamoff_count = 0
         while True:
             try:
