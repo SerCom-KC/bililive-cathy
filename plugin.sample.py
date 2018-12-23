@@ -47,20 +47,20 @@ def commandParse(source, text):
         else:
             return False
     elif text == '#now':
-        if source == "telegram-inlinequery":
+        #if source == "telegram-inlinequery":
             nowOnAir(source)
-        else:
-            sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
+        #else:
+#            sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('#new') == 0:
         newOnAir(source, text)
         #sendReply(source, ['这个功能被禁用了，非常抱歉呜喵QAQ'])
     elif text.find('#next') == 0:
-        if source == "telegram-inlinequery":
+ #       if source == "telegram-inlinequery":
             nextOnAir(source, text)
-        else:
-            sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
+  #      else:
+   #         sendReply(source, ['呜，Cathy的时间表被KC没收了~'])
     elif text.find('字幕') != -1 and source["from"] == "bili-danmaku":
-        sendReply(source, ['需要英文字幕的话请前往备用直播间喵~'])
+        sendReply(source, ['本直播间就是无字幕生肉放送的喵！！'])
     elif text == '#help':
         if source["from"] == "bili-danmaku":
             sendReply(source, ['呜喵~太多了不能在弹幕里发的喵！', '请在私信里发送这个命令的喵！'])
@@ -304,11 +304,11 @@ def checkSchedule(allshows, index, prev_show=''):
         return True
     return False
 
-def getSchedule(source=None, channel='undefined'):
+def getSchedule(source=None, channel='undefined', forceupdate=False):
     from main import sendBusy
     now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
     next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
-    if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime']: # needs update
+    if now_last_query['title'] != '' and next_last_query['title'] != '' and int(time.time()) < next_last_query['airtime'] and not forceupdate: # needs update
         return True
     if source:
         sendBusy(source, '稍等一下哦，Cathy去查查放送表的喵~')
@@ -375,10 +375,10 @@ def nowOnAir(source):
     #    sendReply(source, ['现在什么都不会播的喵~'])
     #    return
     if source["from"] != "telegram-inlinequery":
-        now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
         if not getSchedule(source):
             sendReply(source, ['Cathy也不知道的喵~'])
             return
+        now_last_query = {'title': getConfig('extras', 'now_title'), 'episodeName': getConfig('extras', 'now_episodeName'), 'airtime': int(getConfig('extras', 'now_airtime'))}
         if now_last_query['title'] == "[AdultSwim]" or now_last_query['title'] == "Cartoon Network": # parse failed
             sendReply(source, ['Cathy也不知道的喵~'])
             return
@@ -439,11 +439,11 @@ def nextOnAir(source, text):
     #    sendReply(source, ['晚点再来喵~'])
     #    return
     if source["from"] != "telegram-inlinequery":
-        next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
         if text.replace(' ','') == '#next': # literally what's coming up next
             if not getSchedule(source):
                 sendReply(source, ['Cathy也不知道的喵~'])
                 return
+            next_last_query = {'title': getConfig('extras', 'next_title'), 'episodeName': getConfig('extras', 'next_episodeName'), 'airtime': int(getConfig('extras', 'next_airtime'))}
             if next_last_query['title'] == "[AdultSwim]" or next_last_query['title'] == "Cartoon Network":
                 sendReply(source, ['Cathy也不知道的喵~'])
                 return
@@ -654,4 +654,3 @@ def roomTitle(title):
 
 def initStream(argv):
     printlog("INFO", "I'm going to do nothing. Write some code in plugin.py please.")
-
