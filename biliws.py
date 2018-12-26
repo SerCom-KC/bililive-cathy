@@ -10,7 +10,7 @@ import logging
 
 def danmakuParse(message):
     response = json.loads(message)
-    if "cmd" in response:
+    if not "cmd" in response:
         return
     elif response["cmd"] == "DANMU_MSG":
         if str(response['info'][2][0]) == getConfig('assist', 'uid'):
@@ -63,7 +63,18 @@ def on_close(ws):
 
 def listenDanmaku():
     logging.basicConfig()
-    ws = websocket.WebSocketApp("ws://broadcastlv.chat.bilibili.com:2244/sub", on_message=on_message, on_error=on_error, on_close=on_close)
+    params = {
+        "room_id": getConfig("host", "roomid"),
+        "platform": "pc",
+        "player": "web"
+    }
+    resp = bilireq("https://api.live.bilibili.com/room/v1/Danmu/getConf", params=params).json()
+    if resp["code"] != 0:
+        printlog("ERROR", "Unexpected error occurred when initiating danmaku listener.")
+        return
+    host = resp["data"]["host_server_list"][0]["host"]
+    port = resp["data"]["host_server_list"][0]["wss_port"]
+    ws = websocket.WebSocketApp("wss://%s:%s/sub" % (host, port), on_message=on_message, on_error=on_error, on_close=on_close)
     ws.on_open = on_open
     while True:
         try:
