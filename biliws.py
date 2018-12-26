@@ -10,14 +10,16 @@ import logging
 
 def danmakuParse(message):
     response = json.loads(message)
-    if "cmd" in response and response["cmd"] == "DANMU_MSG":
+    if "cmd" in response:
+        return
+    elif response["cmd"] == "DANMU_MSG":
         if str(response['info'][2][0]) == getConfig('assist', 'uid'):
             printlog("INFO", "Danmaku sent: " + response['info'][1])
             return
         printlog("INFO", "New danmaku from " + response['info'][2][1] + " (" + str(response['info'][2][0]) + ") at " + str(response['info'][0][4]) + ": " + response['info'][1])
         from plugin import commandParse
         commandParse({"from": "bili-danmaku", "uid": response['info'][2][0], "username": response['info'][2][1]}, response['info'][1])
-    if response['cmd'] == 'PREPARING': # or response['cmd'] == 'ROOM_SILENT_OFF'
+    elif response["cmd"] == "PREPARING":
         printlog("INFO", "Looks like the live switch is OFF.")
         from main import startLive
         startLive()
