@@ -95,12 +95,16 @@ def login(user):
 
 def checkToken(user, firstrun=False):
     third_login = True
+    try:
+        if getConfig(user, "refreshtoken") != "": third_login = False
+    except Exception:
+        pass
     if firstrun:
         callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
         check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
         resp = requests.get(check_auth_url, timeout=3).json()
-        if resp["data"] == -400:
+        if "data" in resp and resp["data"] == -400:
             printlog("WARNING", "Cannot verify your appkey at the moment. Will try to proceed anyway.")
             third_login = False
         elif resp['code'] == -1:
@@ -111,6 +115,8 @@ def checkToken(user, firstrun=False):
             raise SystemExit
         if getConfig(user, 'accesskey') == '':
             printlog("ERROR", "Access key of the %s account is missing. Will try to sign in with username/password." % (user))
+            if third_login:
+                printlog("ERROR", "You can also generate one at %s" % (auth_url))
             login(user)
     if firstrun or getConfig(user, 'expires') == '' or getConfig(user, 'uid') == '':
         url = 'https://passport.bilibili.com/api/oauth'
@@ -123,6 +129,8 @@ def checkToken(user, firstrun=False):
             setConfig(user, 'uid', resp['access_info']['mid'])
         else:
             printlog("ERROR", "Access key of the %s account is invalid. Will try to sign in with username/password." % (user))
+            if third_login:
+                printlog("ERROR", "You can also generate one at %s" % (auth_url))
             login(user)
     if getConfig('host', 'roomid') == '':
         url = 'https://space.bilibili.com/ajax/live/getLive'
@@ -135,6 +143,7 @@ def checkToken(user, firstrun=False):
         else:
             printlog("ERROR", "Failed to get room ID of host.")
     if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
+        printlog("INFO", "Refreshing access key of the %s account." % (user))
         if third_login:
             url = "https://passport.bilibili.com/api/login/renewToken"
             params = {
@@ -175,4 +184,4 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False)
     if cookies != {}:
         data["csrf_token"] = cookies["bili_jct"]
         data["csrf"] = cookies["bili_jct"]
-    return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=3)
+    return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
