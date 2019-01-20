@@ -652,5 +652,21 @@ def roomTitle(title):
     else:
         printlog("ERROR", "Failed to change room title to " + title + ". API says " + response["message"])
 
+def roomNews(content):
+    url = "https://api.live.bilibili.com/room_ex/v1/RoomNews/update"
+    params = {
+        "access_key": getConfig("host", "accesskey")
+    }
+    data = {
+        "roomid": getConfig("host", "roomid"),
+        "uid": getConfig("host", "uid"),
+        "content": content
+    }
+    response = bilireq(url, params=params, data=data).json()
+    if response["code"] == 0:
+        printlog("INFO", "Successfully changed room announcement to %s" % (content))
+    else:
+        printlog("ERROR", "Failed to change room announcement to %s. API says %s" % (content, response["message"]))
+
 def initStream(argv):
     printlog("INFO", "I'm going to do nothing. Write some code in plugin.py please.")
