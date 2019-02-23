@@ -27,12 +27,16 @@ def convertTime(dt):
         return int((dt - datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds())
 
 def getConfig(section, entry=None):
-    from configparser import ConfigParser
+    from configparser import ConfigParser, NoSectionError
     config = ConfigParser()
     config.read(sys.path[0] + '/config.ini', encoding="utf-8")
-    if entry:
-        return config.get(section, entry)
-    return dict(config.items(section))
+    try:
+        if entry:
+            return config.get(section, entry)
+        return dict(config.items(section))
+    except NoSectionError:
+        time.sleep(5)
+        return getConfig(section, entry)
 
 def setConfig(section, entry, value):
     from configparser import ConfigParser
