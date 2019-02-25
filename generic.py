@@ -104,7 +104,7 @@ def checkToken(user, firstrun=False):
     except Exception:
         pass
     if firstrun:
-        callback_url = 'https://sercom-kc.github.io/bililive-cathy/callback.html'
+        callback_url = "https://link.acg.tv/forum.php"
         auth_url = 'https://passport.bilibili.com/register/third.html?api=' + callback_url + '&appkey=' + getConfig('oauth', 'appkey') + '&sign=' + md5(str('api=' + callback_url + getConfig('oauth', 'appsecret')).encode('utf-8')).hexdigest()
         check_auth_url = auth_url.replace('https://passport.bilibili.com/register/third.html', 'https://passport.bilibili.com/login/app/third')
         resp = requests.get(check_auth_url, timeout=3).json()
@@ -160,7 +160,7 @@ def checkToken(user, firstrun=False):
                 "appkey": getConfig("oauth", "appkey"),
                 "refresh_token": getConfig(user, "refreshtoken")
             }
-        resp = bilireq(url, params=params).json()
+        resp = bilireq(url, params=params, force_get=True).json()
         if resp['code'] == 0:
             if third_login:
                 setConfig(user, 'expires', resp['expires'])
@@ -168,10 +168,11 @@ def checkToken(user, firstrun=False):
                 setConfig(user, "accesskey", resp["data"]["access_token"])
                 setConfig(user, "refreshtoken", resp["data"]["refresh_token"])
         else:
-            printlog("WARNING", "Failed to renew the access key of the %s account. Will try to sign in with username/password." % (user))
+            printlog("WARNING", "Failed to renew the access key of the %s account. API says %s" % (user, resp["message"]))
+            printlog("WARNING", "Will try to sign in with username/password.")
             login(user)
 
-def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False):
+def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False, force_get=False):
     from collections import OrderedDict
     headers['User-Agent'] = ''
     if data == {}: data = params
@@ -188,4 +189,6 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False)
     if cookies != {}:
         data["csrf_token"] = cookies["bili_jct"]
         data["csrf"] = cookies["bili_jct"]
+    if force_get:
+        return requests.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
     return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
