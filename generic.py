@@ -10,8 +10,8 @@ import atexit
 TELEGRAM_API = "https://api.telegram.org"
 
 def printlog(log_type, message):
-    log_message = '[' + str(int(time.time())) + '] [' + log_type + '] ' + message
-    print(log_message)
+    log_message = "[%s] %s" % (log_type, message)
+    print(log_message, flush=True)
     with open(sys.path[0] + '/cathy.log', 'a', encoding='utf-8') as logfile:
         logfile.write(log_message + '\n')
     if getConfig('telegram', 'token') != "" and getConfig('telegram', 'log_channel') != "":

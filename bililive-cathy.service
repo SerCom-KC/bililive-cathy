@@ -1,0 +1,14 @@
+[Unit]
+Description=bililive-cathy daemon
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+ExecStart=/path/to/bililive-cathy/main.py
+
+[Install]
+WantedBy=multi-user.target
+
