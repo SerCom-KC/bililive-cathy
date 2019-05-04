@@ -250,8 +250,11 @@ def listenBiliMsg():
             time.sleep(10)
             url = "https://api.vc.bilibili.com/web_im/v1/web_im/fetch_msg" # get messages, up to 100 at once
             response = s.post(url, params = {"access_key": getConfig('assist', 'accesskey')}, data = {"client_seqno": seqno, "msg_count": 100, "uid": int(getConfig('assist', 'uid')), "dev_id": device_id}, timeout=10).json()
-            if response["code"] != 0:
-                printlog("ERROR", "Failed to receive bilibili private message. API says " + response["msg"])
+            if response["code"] == -6:
+                timeout_count += 1
+                continue
+            elif response["code"] != 0:
+                printlog("ERROR", "Failed to receive bilibili private message [%s]: %s" % (response["code"], response["msg"]))
                 continue
             has_more = response["data"]["has_more"]
             if "max_seqno" in response["data"]:
@@ -436,6 +439,13 @@ def checkStream():
                     "otype": "json"
                 }
                 resp = requests.get(url, params=params, timeout=10).json()
+                if resp["code"] == 10001:
+                    fail_count += 1
+                    continue
+                elif resp["code"] != 0:
+                    printlog("DEBUG", resp)
+                    fail_count += 1
+                    continue
                 stream_url = resp["data"]["durl"][0]["url"]
                 stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
                 break
