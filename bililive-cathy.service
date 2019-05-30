@@ -8,6 +8,7 @@ Type=simple
 Restart=always
 RestartSec=3
 ExecStart=/path/to/bililive-cathy/main.py
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
