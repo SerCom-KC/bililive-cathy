@@ -144,7 +144,7 @@ def sendDanmaku(text):
              if not sendDanmaku(text[i:i+danmaku_limit]):
                  return False
         return True
-    url = "http://api.live.bilibili.com/api/sendmsg"
+    url = "https://api.live.bilibili.com/api/sendmsg"
     data = {
         "access_key": getConfig("assist", "accesskey"),
         "cid": getConfig("host", "roomid"),
