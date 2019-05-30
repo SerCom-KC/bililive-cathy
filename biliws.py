@@ -10,9 +10,10 @@ import logging
 
 def danmakuParse(message):
     response = json.loads(message)
+    #printlog("DEBUG", response)
     if not "cmd" in response:
         return
-    elif response["cmd"] == "DANMU_MSG":
+    elif response["cmd"].startswith("DANMU_MSG"):
         if str(response['info'][2][0]) == getConfig('assist', 'uid'):
             printlog("INFO", "Danmaku sent: " + response['info'][1])
             return
