@@ -172,7 +172,14 @@ def checkToken(user, firstrun=False):
             printlog("WARNING", "Will try to sign in with username/password.")
             login(user)
 
-def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False, force_get=False):
+def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False, force_get=False, host_ip=None):
+    s = requests.Session()
+    if host_ip:
+        import host_header_ssl_sni
+        s.mount("https://", host_header_ssl_sni.HostHeaderSSLAdapter())
+        host = url.replace("https://", "").split("/")[0]
+        headers["Host"] = host
+        url = url.replace(host, host_ip)
     from collections import OrderedDict
     headers['User-Agent'] = ''
     if data == {}: data = params
@@ -190,5 +197,5 @@ def bilireq(url, params={}, headers={}, cookies={}, data={}, no_urlencode=False,
         data["csrf_token"] = cookies["bili_jct"]
         data["csrf"] = cookies["bili_jct"]
     if force_get:
-        return requests.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
-    return requests.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
+        return s.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
+    return s.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
