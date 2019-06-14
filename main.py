@@ -186,6 +186,20 @@ def startLive(argv=None, force=False):
             return
     except NameError:
         pass
+    try:
+        url = "https://api.live.bilibili.com/room/v1/RoomEx/getCutReason"
+        data = {
+            "access_key": getConfig("host", "accesskey"),
+            "room_id": getConfig("host", "roomid")
+        }
+        resp = bilireq(url, data=data).json()
+        printlog("DEBUG", resp)
+        if resp["data"] != []:
+            printlog("WARNING", "Your livestream was terminated by bilibili.")
+            printlog("WARNING", "Please clear the message first.")
+            raise SystemExit
+    except Exception:
+        pass
     startLive_lock = True
     try:
         url = 'https://api.live.bilibili.com/room/v1/Room/startLive'
