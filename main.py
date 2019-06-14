@@ -221,6 +221,15 @@ def startLive(argv=None, force=False):
                 return -1
         else:
             printlog("INFO", "Live switch is now ON.")
+        if response["data"]["rtmp"]["provider"] == "js": # this provider does not work well outside mainland
+            url = "https://api.live.bilibili.com/live_stream/v1/StreamList/get_stream_by_roomId"
+            params = {
+                "access_key":  getConfig('host', 'accesskey'),
+                "room_id": getConfig('host', 'roomid')
+            }
+            response = bilireq(url, params=params, force_get=True).json()
+            if response["code"] != 0:
+                printlog("ERROR", "Failed to get optimized stream address.")
         addr = response["data"]["rtmp"]["addr"]
         code = response["data"]["rtmp"]["code"]
         try:
