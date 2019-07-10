@@ -149,10 +149,14 @@ def checkToken(user, firstrun=False):
     if int(getConfig(user, 'expires')) - int(time.time()) < 15*24*60*60:
         printlog("INFO", "Refreshing access key of the %s account." % (user))
         if third_login:
-            url = "https://passport.bilibili.com/api/login/renewToken"
-            params = {
-                "access_key": getConfig(user, "accesskey")
-            }
+             printlog("WARNING", "Failed to renew the access key of the %s account. API says %s" % (user, resp["message"]))
+             printlog("WARNING", "Will try to sign in with username/password.")
+             login(user)
+             return
+#            url = "https://passport.bilibili.com/api/login/renewToken"
+#            params = {
+#                "access_key": getConfig(user, "accesskey")
+#            }
         else:
             url = "https://passport.bilibili.com/api/oauth2/refreshToken"
             params = {
