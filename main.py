@@ -183,8 +183,21 @@ def startLive(argv=None, force=False):
     try:
         if startLive_lock:
             printlog("DEBUG", "startLive_lock is on, cannot proceed.")
-            return
+            return True
     except NameError:
+        pass
+    try:
+        url = "https://api.live.bilibili.com/room/v1/Room/getBannedInfo"
+        data = {
+            "roomid": getConfig("host", "roomid")
+        }
+        resp = bilireq(url, data=data).json()
+        printlog("DEBUG", resp)
+        if int(time.time()) <= resp["data"]["lock_till"]:
+            printlog("ERROR", "Your livestream was banned by bilibili.")
+            printlog("ERROR", "Cathy will now exit.")
+            return False
+    except Exception:
         pass
     try:
         url = "https://api.live.bilibili.com/room/v1/RoomEx/getCutReason"
