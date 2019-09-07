@@ -446,9 +446,9 @@ def checkConfig(firstrun=False):
     time.sleep(1)
     checkToken('assist', firstrun)
     if firstrun:
-        url = "https://api.live.bilibili.com/api/player"
-        response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "id": "cid:" + getConfig('host', 'roomid')}, timeout=3).text
-        danmaku_limit = int(re.search(r'<msg_length>[0-9]*</msg_length>', response).group(0).replace('<msg_length>', '').replace('</msg_length>', ''))
+        url = "https://api.live.bilibili.com/userext/v1/danmuConf/getAll"
+        response = requests.get(url, params = {"access_key": getConfig('assist', 'accesskey'), "roomid": getConfig('host', 'roomid')}, timeout=3).json()
+        danmaku_limit = response["data"]["length"]
         if getConfig('telegram', 'token') != "":
             url = TELEGRAM_API + "/bot" + getConfig('telegram', 'token') + "/getMe"
             if not requests.get(url, timeout=3).json()["ok"]:
