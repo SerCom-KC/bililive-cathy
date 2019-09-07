@@ -457,6 +457,7 @@ def checkConfig(firstrun=False):
 
 
 def checkStream():
+    return True # this function hits bilibili's request limit
     flag = False
     try:
         stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
