@@ -15,7 +15,7 @@ class HostSSLContext(ssl.SSLContext):
         return super(HostSSLContext, cls).__new__(cls, ssl.PROTOCOL_SSLv23)
 
     def __init__(self, hostname):
-        super(HostSSLContext, self).__init__(ssl.PROTOCOL_SSLv23)
+        super(HostSSLContext, self).__init__()#ssl.PROTOCOL_SSLv23)
         self._hostname = hostname
 
         # Disable SSLv2 & SSLv3
