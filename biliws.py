@@ -23,7 +23,8 @@ def danmakuParse(message):
     elif response["cmd"] == "PREPARING":
         printlog("INFO", "Looks like the live switch is OFF.")
         from main import startLive
-        startLive()
+        if not startLive():
+            raise SystemExit
     return
 
 def on_message(ws, data):
@@ -35,7 +36,8 @@ def on_message(ws, data):
         from main import isLiving, startLive
         if not isLiving():
             printlog("INFO", "Looks like the live switch is OFF.")
-            startLive()
+            if not startLive():
+                raise SystemExit
         return
     if len(data) == 20:
         return

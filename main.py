@@ -210,7 +210,7 @@ def startLive(argv=None, force=False):
         if resp["data"] != []:
             printlog("WARNING", "Your livestream was terminated by bilibili.")
             printlog("WARNING", "Please clear the message first.")
-            raise SystemExit
+            return False
     except Exception:
         pass
     startLive_lock = True
@@ -535,7 +535,8 @@ def main():
                 else:
                     streamoff_count = 0
                 if streamoff_count >= 3:
-                    startLive(force=True)
+                    if not startLive(force=True):
+                        raise SystemExit
                     streamoff_count = 0
                 time.sleep(5)
             except Exception:
