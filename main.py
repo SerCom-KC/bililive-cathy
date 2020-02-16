@@ -36,6 +36,8 @@ def sendReply(source, responses, type="text"):
         answerTelegramInlineQuery(source, results)
     elif source["from"] == "mastodon":
         sendMastodonStatus(source, '\n'.join(responses))
+    elif source["from"] == "cmdline":
+        print('\n'.join(responses))
     else:
         printlog("ERROR", "Invalid sendReply source!")
 
@@ -511,8 +513,9 @@ def main():
             printlog("ERROR", "Unexpected error occurred during initialization.")
             printlog("TRACEBACK", "\n" + traceback.format_exc())
     try:
-        if len(sys.argv) != 1 and sys.argv[1] == 'initStream':
-            startLive(sys.argv[2], force=True)
+        if len(sys.argv) != 1:
+            from plugin import commandParse
+            commandParse({"from": "cmdline"}, "#" + " ".join(sys.argv[1:]))
             raise SystemExit
         setConfig('extras', 'start_time', int(time.time()))
         printlog('INFO', 'Cathy is on!')
