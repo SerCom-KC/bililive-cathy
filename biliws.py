@@ -25,6 +25,13 @@ def danmakuParse(message):
         from main import startLive
         if not startLive():
             raise SystemExit
+    elif response["cmd"] == "WARNING":
+        printlog("WARNING", "Your livestream is warned by bilibili.")
+        printlog("DEBUG", response)
+    elif response["cmd"] == "CUT_OFF" or response["cmd"] == "ROOM_LOCK":
+        printlog("ERROR", "Your livestream is banned by bilibili.")
+        printlog("DEBUG", response)
+        raise SystemExit
     return
 
 def on_message(ws, data):
