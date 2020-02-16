@@ -459,11 +459,12 @@ def checkConfig(firstrun=False):
 
 
 def checkStream():
-    return True # this function hits bilibili's request limit
-    flag = False
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
+    }
+    flag = (int(time.time()) > int(getConfig("runtime", "play_url_expire")))
     try:
-        stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
-        flag = (stream_status_code == 404)
+        stream_status_code = requests.head(getConfig("runtime", "play_url"), timeout=30, stream=True, headers=headers).status_code
     except Exception:
         flag = True
     if flag:
@@ -477,7 +478,8 @@ def checkStream():
                     "platform": "web",
                     "otype": "json"
                 }
-                resp = requests.get(url, params=params, timeout=10).json()
+                resp = requests.get(url, params=params, timeout=30)
+                resp = resp.json()
                 if resp["code"] == 10001:
                     fail_count += 1
                     continue
@@ -486,7 +488,13 @@ def checkStream():
                     fail_count += 1
                     continue
                 stream_url = resp["data"]["durl"][0]["url"]
-                stream_status_code = requests.get(stream_url, timeout=10, stream=True).status_code
+                setConfig("runtime", "play_url", stream_url)
+                stream_url_expire = re.search(r"wsTime=\d+", stream_url)
+                if stream_url_expire:
+                    setConfig("runtime", "play_url_expire", stream_url_expire.group(0).replace("wsTime=", ""))
+                else:
+                    printlog("DEBUG", "No wsTime found.")
+                stream_status_code = requests.head(stream_url, timeout=30, stream=True, headers=headers).status_code
                 break
             except requests.exceptions.ConnectionError:
                 fail_count += 1
@@ -497,7 +505,7 @@ def checkStream():
         if fail_count >= 3:
             printlog("WARNING", "Connection error occurred 3 times while checking bilibili live stream.")
             return True
-    if stream_status_code == 404:
+    if int(stream_status_code) == 404:
         return False
     return True
 
