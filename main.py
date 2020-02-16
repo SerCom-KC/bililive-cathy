@@ -529,7 +529,7 @@ def main():
         printlog('INFO', 'Cathy is on!')
         atexit.register(onexit)
         from biliws import listenDanmaku
-        Thread(target=listenDanmaku).start()
+        listenDanmaku()
         if getConfig('assist', 'pm') == "1":
             Thread(target=listenBiliMsg).start()
         if getConfig('telegram', 'token') != "" and getConfig('telegram', 'pm') == "1":

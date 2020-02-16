@@ -69,7 +69,9 @@ def on_error(ws, error):
     printlog("ERROR", "A websocket error occurred: " + str(error))
 
 def on_close(ws):
-    printlog("WARNING", "Disconnected with danmaku websocket server.")
+    printlog("WARNING", "Disconnected with danmaku websocket server. Reconnecting in 5s.")
+    time.sleep(5)
+    listenDanmaku()
 
 def listenDanmaku():
     logging.basicConfig()
@@ -82,16 +84,14 @@ def listenDanmaku():
     if resp["code"] != 0:
         printlog("ERROR", "Unexpected error occurred when initiating danmaku listener.")
         return
-    host = resp["data"]["host_server_list"][0]["host"]
-    port = resp["data"]["host_server_list"][0]["wss_port"]
+    host = resp["data"]["host_server_list"][-1]["host"]
+    port = resp["data"]["host_server_list"][-1]["wss_port"]
+    printlog("DEBUG", "Selected danmaku server: %s:%s" % (host, port))
     ws = websocket.WebSocketApp("wss://%s:%s/sub" % (host, port), on_message=on_message, on_error=on_error, on_close=on_close)
     ws.on_open = on_open
-    while True:
-        try:
-            ws.run_forever()
-        except Exception:
-            printlog("ERROR", "Unexpected error occurred on websocket.")
-            printlog("TRACEBACK", "\n" + traceback.format_exc())
+    ws = threading.Thread(target=ws.run_forever)
+    ws.daemon = True
+    ws.start()
 
 def on_open(ws):
     def run(*args):
