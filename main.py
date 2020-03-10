@@ -441,9 +441,6 @@ def checkConfig(firstrun=False):
     if sys.stdout.encoding.lower() != 'utf-8':
         printlog("ERROR", "Looks like the encoding of stdout is not UTF-8. Try adding PYTHONIOENCODING=utf-8 to your environment variables first.")
         raise SystemExit
-    if getConfig('oauth', 'appkey') == '' or getConfig('oauth', 'appsecret') == '':
-        printlog("ERROR", "You must set up OAuth application info in config.ini")
-        raise SystemExit
     checkToken('host', firstrun)
     time.sleep(1)
     checkToken('assist', firstrun)
