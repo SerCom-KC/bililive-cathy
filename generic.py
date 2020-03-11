@@ -262,30 +262,30 @@ def checkToken(user, firstrun=False, force_client="biliLink"):
             login(user)
 
 def bilireq(url, params={}, headers={}, cookies=None, data={}, no_urlencode=False, force_get=False, host_ip=None, force_client="biliLink"):
-    s = requests.Session()
-    if host_ip:
-        import host_header_ssl_sni
-        s.mount("https://", host_header_ssl_sni.HostHeaderSSLAdapter())
-        host = url.replace("https://", "").split("/")[0]
-        headers["Host"] = host
-        url = url.replace(host, host_ip)
-    from collections import OrderedDict
-    headers["User-Agent"] = ""
-    if data == {}: data = params
-    else: data.update(params)
-    if cookies == None:
-        data["appkey"] = BILIBILI_ANDROID_APPS_INFO[force_client]["ak"]
-        data["ts"] = str(int(time.time()))
-        data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
-        prestr = "&".join("%s=%s" % key for key in data.items())
-        data["sign"] = md5(str(prestr + BILIBILI_ANDROID_APPS_INFO[force_client]["sk"]).encode("utf-8")).hexdigest()
-    if no_urlencode:
-        data = "&".join("%s=%s" % key for key in data.items())
-    if cookies != None:
-        data["csrf_token"] = cookies["bili_jct"]
-        data["csrf"] = cookies["bili_jct"]
-    if force_get:
-        return s.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
-    else:
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
-        return s.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
+    with requests.Session() as s:
+        if host_ip:
+            import host_header_ssl_sni
+            s.mount("https://", host_header_ssl_sni.HostHeaderSSLAdapter())
+            host = url.replace("https://", "").split("/")[0]
+            headers["Host"] = host
+            url = url.replace(host, host_ip)
+        from collections import OrderedDict
+        headers["User-Agent"] = ""
+        if data == {}: data = dict(params)
+        else: data.update(params)
+        if cookies == None:
+            data["appkey"] = BILIBILI_ANDROID_APPS_INFO[force_client]["ak"]
+            data["ts"] = str(int(time.time()))
+            data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
+            prestr = "&".join("%s=%s" % key for key in data.items())
+            data["sign"] = md5(str(prestr + BILIBILI_ANDROID_APPS_INFO[force_client]["sk"]).encode("utf-8")).hexdigest()
+        if no_urlencode:
+            data = "&".join("%s=%s" % key for key in data.items())
+        if cookies != None:
+            data["csrf_token"] = cookies["bili_jct"]
+            data["csrf"] = cookies["bili_jct"]
+        if force_get:
+            return s.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
+        else:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            return s.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
