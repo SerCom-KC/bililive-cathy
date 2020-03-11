@@ -66,6 +66,22 @@ BILIBILI_ANDROID_APPS_INFO = {
     }
 }
 
+BILIGAME_ANDROID_APPS_INFO = {
+    "id": 876,
+    "cn.bigfun": {
+        "app_id": 1241,
+        "app_key": "bf2f6e7597a74d67929d84b5fd6dafd5",
+        "merchant_id": 423,
+        "server_id": 1463
+    },
+    "com.bilibili.star.bili": {
+        "app_id": 330,
+        "app_key": "0e814339fb45488db2f0a3462fe17690",
+        "merchant_id": 1,
+        "server_id": 557
+    }
+}
+
 def printlog(log_type, message):
     log_message = "[%s] %s" % (log_type, message)
     print(log_message, flush=True)
@@ -165,6 +181,24 @@ def login(user=None, username="", password=""):
     else:
         printlog("DEBUG", resp)
 
+def biligame_session_renew(user, force_client="cn.bigfun"):
+    server_list = biligamereq("https://p.biligame.com/api/client/config", force_client=force_client).json()
+    # /api/client/session.renew: generate a new access key (does not revoke the current one)
+    # /api/client/session.renewal: extends the current access key
+    url = "%s/api/client/session.renewal" % (server_list["config_login_https"].split(",")[0])
+    data = {
+        "access_key": getConfig(user, "accesskey")
+    }
+    resp = biligamereq(url, data=data, force_client=force_client).json()
+    if resp["code"] == 0:
+        setConfig(user, "expires", resp["expires"] / 1000)
+        #setConfig(user, "uid", resp["uid"]) # not available with session.renewal
+        #setConfig(user, "accesskey", resp["access_key"]) # not available with session.renewal
+        return True
+    else:
+        printlog("ERROR", "Failed to renew access key with biligame API:", resp["message"])
+        return False
+
 def checkToken(user, firstrun=False, force_client="biliLink"):
     #if firstrun:
         #callback_url = "https://link.acg.tv/forum.php"
@@ -183,19 +217,17 @@ def checkToken(user, firstrun=False, force_client="biliLink"):
         if resp["code"] == 0:
             setConfig(user, "expires", resp["access_info"]["expires"])
             setConfig(user, "uid", resp["access_info"]["mid"])
-            if resp["access_info"]["appid"] not in [client["id"] for client in BILIBILI_ANDROID_APPS_INFO.values()]:
-                printlog("ERROR", "Access key of the %s account is not supported." % (user))
-                printlog("INFO", "Attempting to sign in with username/password.")
-                login(user)
-            else:
+            if resp["access_info"]["appid"] in [client["id"] for client in BILIBILI_ANDROID_APPS_INFO.values()]:
                 access_key_appid = resp["access_info"]["appid"]
+            else:
+                access_key_appid = None
         else:
             printlog("ERROR", "Access key of the %s account is invalid." % (user))
             printlog("INFO", "Attempting to sign in with username/password.")
             #printlog("ERROR", "You can also generate one at %s" % (auth_url))
             login(user)
 
-    if getConfig(user, "refreshtoken") == "":
+    if getConfig(user, "refreshtoken") == "" and access_key_appid:
         printlog("INFO", "Refresh token of the %s account is missing. Will try to generate one." % (user))
         for client in BILIBILI_ANDROID_APPS_INFO.keys():
             if access_key_appid != BILIBILI_ANDROID_APPS_INFO[client]["id"]: continue
@@ -211,25 +243,24 @@ def checkToken(user, firstrun=False, force_client="biliLink"):
         #if resp["code"] == -900:
         #    printlog("ERROR", "Cannot determine the corresponding client for the access key of the %s account." % (user))
         if resp["code"] != 0:
-            printlog("ERROR", "Failed to generate refresh token for the %s account." % (user))
-            printlog("INFO", "Attempting to sign in with username/password.")
-            login(user)
-        url = "https://passport.bilibili.com/api/v2/oauth2/access_token"
-        params = {
-            "appkey": BILIBILI_ANDROID_APPS_INFO[force_client]["ak"],
-            "code": resp["data"]["code"],
-            "grant_type": "authorization_code"
-        }
-        resp = bilireq(url, params=params, force_get=True).json()
-        if resp["code"] != 0:
-            printlog("ERROR", "Failed to generate refresh token for the %s account." % (user))
-            printlog("INFO", "Attempting to sign in with username/password.")
-            login(user)
+            printlog("WARNING", "Failed to generate refresh token for the %s account." % (user))
+            access_key_appid = None
         else:
-            setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
-            setConfig(user, "uid", resp["data"]["token_info"]["mid"])
-            setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
-            setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
+            url = "https://passport.bilibili.com/api/v2/oauth2/access_token"
+            params = {
+                "appkey": BILIBILI_ANDROID_APPS_INFO[force_client]["ak"],
+                "code": resp["data"]["code"],
+                "grant_type": "authorization_code"
+            }
+            resp = bilireq(url, params=params, force_get=True).json()
+            if resp["code"] != 0:
+                printlog("WARNING", "Failed to generate refresh token for the %s account." % (user))
+                access_key_appid = None
+            else:
+                setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
+                setConfig(user, "uid", resp["data"]["token_info"]["mid"])
+                setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
+                setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
 
     if getConfig("host", "roomid") == "":
         url = "https://space.bilibili.com/ajax/live/getLive"
@@ -243,22 +274,28 @@ def checkToken(user, firstrun=False, force_client="biliLink"):
             printlog("ERROR", "Failed to get room ID of host.")
 
     if int(getConfig(user, "expires")) - int(time.time()) < 15*24*60*60:
-        printlog("INFO", "Refreshing access key of the %s account." % (user))
-        url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token"
-        data = {
-            "access_key": getConfig(user, "accesskey"),
-            "appkey": BILIBILI_ANDROID_APPS_INFO[force_client]["ak"],
-            "refresh_token": getConfig(user, "refreshtoken")
-        }
-        resp = bilireq(url, data=data).json
-        if resp["code"] == 0:
-            setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
-            setConfig(user, "uid", resp["data"]["token_info"]["mid"])
-            setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
-            setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
-        else:
-            printlog("WARNING", "Failed to renew the access key of the %s account. API says %s" % (user, resp["message"]))
-            printlog("WARNING", "Will try to sign in with username/password.")
+        printlog("INFO", "Renewing access key of the %s account." % (user))
+        if access_key_appid:
+            url = "https://passport.bilibili.com/api/v2/oauth2/refresh_token"
+            data = {
+                "access_key": getConfig(user, "accesskey"),
+                "appkey": BILIBILI_ANDROID_APPS_INFO[force_client]["ak"],
+                "refresh_token": getConfig(user, "refreshtoken")
+            }
+            resp = bilireq(url, data=data).json
+            if resp["code"] == 0:
+                setConfig(user, "expires", resp["ts"] + resp["data"]["token_info"]["expires_in"])
+                setConfig(user, "uid", resp["data"]["token_info"]["mid"])
+                setConfig(user, "accesskey", resp["data"]["token_info"]["access_token"])
+                setConfig(user, "refreshtoken", resp["data"]["token_info"]["refresh_token"])
+            else:
+                printlog("WARNING", "Failed to renew the access key of the %s account. API says %s" % (user, resp["message"]))
+                printlog("WARNING", "Attempting to renew access key with biligame API.")
+                if not biligame_session_renew(user):
+                    printlog("INFO", "Attempting to sign in with username/password.")
+                    login(user)
+        elif not biligame_session_renew(user):
+            printlog("INFO", "Attempting to sign in with username/password.")
             login(user)
 
 def bilireq(url, params={}, headers={}, cookies=None, data={}, no_urlencode=False, force_get=False, host_ip=None, force_client="biliLink"):
@@ -279,6 +316,38 @@ def bilireq(url, params={}, headers={}, cookies=None, data={}, no_urlencode=Fals
             data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
             prestr = "&".join("%s=%s" % key for key in data.items())
             data["sign"] = md5(str(prestr + BILIBILI_ANDROID_APPS_INFO[force_client]["sk"]).encode("utf-8")).hexdigest()
+        if no_urlencode:
+            data = "&".join("%s=%s" % key for key in data.items())
+        if cookies != None:
+            data["csrf_token"] = cookies["bili_jct"]
+            data["csrf"] = cookies["bili_jct"]
+        if force_get:
+            return s.get(url, params=data, headers=headers, cookies=cookies, allow_redirects=False, timeout=10)
+        else:
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+            return s.post(url, params=params, headers=headers, cookies=cookies, data=data, allow_redirects=False, timeout=10)
+
+def biligamereq(url, params={}, headers={}, cookies=None, data={}, no_urlencode=False, force_get=False, host_ip=None, force_client="cn.bigfun"):
+    with requests.Session() as s:
+        if host_ip:
+            import host_header_ssl_sni
+            s.mount("https://", host_header_ssl_sni.HostHeaderSSLAdapter())
+            host = url.replace("https://", "").split("/")[0]
+            headers["Host"] = host
+            url = url.replace(host, host_ip)
+        from collections import OrderedDict
+        headers["User-Agent"] = ""
+        if data == {}: data = dict(params)
+        else: data.update(params)
+        if cookies == None:
+            data["merchant_id"] = BILIGAME_ANDROID_APPS_INFO[force_client]["merchant_id"]
+            data["game_id"] = BILIGAME_ANDROID_APPS_INFO[force_client]["app_id"]
+            data["version"] = 1
+            data["server_id"] = BILIGAME_ANDROID_APPS_INFO[force_client]["server_id"]
+            data["timestamp"] = str(int(time.time()*1000))
+            data = OrderedDict(sorted(data.items(), key=lambda data:data[0]))
+            prestr = "".join("%s" % key for key in data.values())
+            data["sign"] = md5(str(prestr + BILIGAME_ANDROID_APPS_INFO[force_client]["app_key"]).encode("utf-8")).hexdigest()
         if no_urlencode:
             data = "&".join("%s=%s" % key for key in data.items())
         if cookies != None:
