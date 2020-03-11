@@ -126,8 +126,7 @@ def getBiliCookie(user, force_client="biliLink"):
     return resp.cookies
 
 def login(user=None, username="", password=""):
-    from Crypto.PublicKey import RSA
-    from Crypto.Cipher import PKCS1_v1_5
+    import rsa
     from base64 import b64encode
     from urllib.parse import quote_plus as urlencode
     flag = False
@@ -147,8 +146,8 @@ def login(user=None, username="", password=""):
         printlog("ERROR", "Failed to get bilibili's RSA public key. Please check your appkey/appsecret.")
         raise SystemExit
     key = resp["data"]
-    encryptor = PKCS1_v1_5.new(RSA.importKey(bytes(key["key"], "utf-8")))
-    password = str(b64encode(encryptor.encrypt(bytes(key["hash"] + password, "utf-8"))), "utf-8")
+    encryptor = rsa.PublicKey.load_pkcs1_openssl_pem(key["key"].encode("utf-8"))
+    password = b64encode(rsa.encrypt((key["hash"] + password).encode("utf-8"), encryptor)).decode("utf-8")
     username = urlencode(username)
     password = urlencode(password)
     resp = bilireq("https://passport.bilibili.com/api/v2/oauth2/login", data={"username": username, "password": password}, no_urlencode=True).json()

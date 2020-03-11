@@ -1,5 +1,5 @@
 requests
 lxml
 pytz
-pycrypto
+rsa
 websocket_client
